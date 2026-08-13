@@ -1,16 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Profile } from '@/types/database'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isPending, setIsPending] = useState(false)
-  const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -50,9 +47,16 @@ export default function LoginPage() {
         return
       }
 
-      // Force a hard refresh. Since we are on /login, the middleware will intercept this
-      // and redirect the user to their specific dashboard based on their role.
-      window.location.reload()
+      // Navigate directly to the correct dashboard URL based on role.
+      // Using window.location.href ensures the browser makes a fresh server request
+      // with the newly set auth cookies, bypassing Next.js router caching entirely.
+      const role = profileData?.role
+      if (role === 'superadmin') window.location.href = '/superadmin'
+      else if (role === 'ip') window.location.href = '/admin'
+      else if (role === 'op_regis') window.location.href = '/op-regis'
+      else if (role === 'op_sesi') window.location.href = '/op-sesi'
+      else window.location.href = '/dashboard'
+
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan')
       setIsPending(false)

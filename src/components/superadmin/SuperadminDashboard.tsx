@@ -20,13 +20,13 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="panel flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">Superadmin Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">God mode. Kelola semua aspek sistem penjurian.</p>
+          <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Superadmin Panel</h1>
+          <p className="panel-subtext">God mode. Kelola semua aspek sistem penjurian.</p>
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-sm text-slate-400">Event Aktif:</span>
+          <span className="text-sm text-[var(--color-text-muted)]">Event Aktif:</span>
           {activeEvent ? (
             <span className="badge badge-success mt-1">{activeEvent.nama}</span>
           ) : (
@@ -36,7 +36,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       </div>
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar gap-2 p-1 bg-slate-800/50 rounded-xl border border-slate-700/50">
+      <div className="tab-container">
         {[
           { id: 'events', label: 'Event & Lomba', icon: '🏆' },
           { id: 'kategori', label: 'Kategori (Scoring)', icon: '📋' },
@@ -46,10 +46,8 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-amber-500/10 text-amber-500 shadow-[inset_0_0_0_1px_rgba(245,158,11,0.2)]'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            className={`tab-btn ${
+              activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'
             }`}
           >
             <span>{tab.icon}</span>
@@ -61,26 +59,26 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       {/* Content */}
       <div className="animate-fade-in-up">
         {activeTab === 'events' && (
-          <div className="glass-card p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Manajemen Event</h2>
+          <div className="panel">
+            <h2 className="panel-header">Manajemen Event</h2>
             <AdminEventTab events={events} />
           </div>
         )}
 
         {activeTab === 'kategori' && (
-          <div className="glass-card p-6">
+          <div className="panel">
             <KategoriTab activeEvent={activeEvent} />
           </div>
         )}
 
         {activeTab === 'users' && (
-          <div className="glass-card p-6">
+          <div className="panel">
             <UsersTab usersList={usersList} />
           </div>
         )}
 
         {activeTab === 'settings' && (
-          <div className="glass-card p-6">
+          <div className="panel">
             <SettingsTab />
           </div>
         )}

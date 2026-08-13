@@ -79,8 +79,8 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display text-lg font-semibold text-white">📅 Manajemen Event</h3>
-          <p className="text-xs text-slate-400">{events.length} event tercatat</p>
+          <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">📅 Manajemen Event</h3>
+          <p className="text-xs text-[var(--color-text-muted)]">{events.length} event tercatat</p>
         </div>
         <button
           onClick={() => { setEditId(null); setForm({ nama: '', deskripsi: '', tanggal: '', lokasi: '' }); setShowForm(true) }}
@@ -92,8 +92,8 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
 
       {/* Form */}
       {showForm && (
-        <div className="glass-card p-5">
-          <h4 className="font-semibold text-white mb-4">{editId ? 'Edit Event' : 'Buat Event Baru'}</h4>
+        <div className="panel">
+          <h4 className="font-semibold text-[var(--color-text)] mb-4">{editId ? 'Edit Event' : 'Buat Event Baru'}</h4>
           <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="form-label">Nama Event *</label>
@@ -124,26 +124,26 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
       {/* Events list */}
       <div className="space-y-3">
         {events.length === 0 ? (
-          <div className="glass-card p-10 text-center">
+          <div className="panel text-center">
             <div className="text-4xl mb-3">📅</div>
-            <p className="text-slate-500 text-sm">Belum ada event. Buat event pertama!</p>
+            <p className="text-[var(--color-text-muted)] text-sm">Belum ada event. Buat event pertama!</p>
           </div>
         ) : events.map((ev) => {
           const sc = statusConfig[ev.status]
           return (
-            <div key={ev.id} className="glass-card p-5">
+            <div key={ev.id} className="panel">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`badge ${sc.badge}`}>{sc.label}</span>
-                    {ev.status === 'aktif' && <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
+                    {ev.status === 'aktif' && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
                   </div>
-                  <h4 className="font-display text-lg font-semibold text-white">{ev.nama}</h4>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                  <h4 className="font-display text-lg font-semibold text-[var(--color-text)]">{ev.nama}</h4>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-text-muted)]">
                     {ev.tanggal && <span>📅 {new Date(ev.tanggal).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>}
                     {ev.lokasi && <span>📍 {ev.lokasi}</span>}
                   </div>
-                  {ev.deskripsi && <p className="text-sm text-slate-400 mt-1">{ev.deskripsi}</p>}
+                  {ev.deskripsi && <p className="text-sm text-[var(--color-text-muted)] mt-1">{ev.deskripsi}</p>}
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
                   {ev.status !== 'aktif' && ev.status !== 'selesai' && (

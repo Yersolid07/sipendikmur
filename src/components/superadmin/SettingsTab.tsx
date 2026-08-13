@@ -60,8 +60,8 @@ export default function SettingsTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="font-display font-semibold text-white">Pengaturan Global</h3>
-        <p className="text-xs text-slate-400">Atur tampilan dan branding sistem (Berlaku untuk semua halaman)</p>
+        <h3 className="font-display font-semibold text-[var(--color-text)]">Pengaturan Global</h3>
+        <p className="text-xs text-[var(--color-text-muted)]">Atur tampilan dan branding sistem (Berlaku untuk semua halaman)</p>
       </div>
 
       {isLoading ? (
@@ -77,7 +77,7 @@ export default function SettingsTab() {
               className="form-input" 
               placeholder="Contoh: P/KB SINODE, GMIM Wilayah Manado" 
             />
-            <p className="text-xs text-slate-500 mt-1">Akan muncul di sebelah logo pada Navbar dan Kop Surat.</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">Akan muncul di sebelah logo pada Navbar dan Kop Surat.</p>
           </div>
           
           <div>
@@ -88,17 +88,17 @@ export default function SettingsTab() {
               className="form-input" 
               placeholder="https://..." 
             />
-            <p className="text-xs text-slate-500 mt-1">Masukkan link gambar (PNG/SVG) untuk mengganti logo default GMIM.</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">Masukkan link gambar (PNG/SVG) untuk mengganti logo default GMIM.</p>
           </div>
 
           {logoUrl && (
-            <div className="p-4 bg-slate-900 rounded-lg border border-slate-700/50 inline-block">
-              <p className="text-xs text-slate-400 mb-2">Preview Logo:</p>
+            <div className="p-4 bg-[var(--color-cream-2)] rounded-lg border border-[var(--color-border)] inline-block">
+              <p className="text-xs text-[var(--color-text-muted)] mb-2">Preview Logo:</p>
               <img src={logoUrl} alt="Logo Preview" className="h-16 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-700/50 flex justify-end">
+          <div className="pt-4 border-t border-[var(--color-border)] flex justify-end">
             <button type="submit" disabled={isSaving} className="btn-primary px-8">
               {isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}
             </button>

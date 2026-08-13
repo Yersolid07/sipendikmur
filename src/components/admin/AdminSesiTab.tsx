@@ -155,10 +155,10 @@ export default function AdminSesiTab({ activeEvent }: Props) {
 
   if (!activeEvent) {
     return (
-      <div className="glass-card p-10 text-center">
+      <div className="panel p-10 text-center">
         <div className="text-5xl mb-4">📅</div>
-        <h3 className="font-display text-xl font-semibold text-slate-300 mb-2">Tidak Ada Event Aktif</h3>
-        <p className="text-slate-500 text-sm">Buat atau aktifkan event di tab Event terlebih dahulu.</p>
+        <h3 className="font-display text-xl font-semibold text-[var(--color-text)] mb-2">Tidak Ada Event Aktif</h3>
+        <p className="text-[var(--color-text-muted)] text-sm">Buat atau aktifkan event di tab Event terlebih dahulu.</p>
       </div>
     )
   }
@@ -166,19 +166,19 @@ export default function AdminSesiTab({ activeEvent }: Props) {
   return (
     <div className="space-y-5">
       {/* Current Active Performer */}
-      <div className="glass-card p-5">
-        <h3 className="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
+      <div className="panel p-5">
+        <h3 className="font-display text-lg font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2">
           🎯 Status Sesi Saat Ini
         </h3>
         {sesi?.peserta ? (
           <div className="performer-banner">
             <div className="flex items-center justify-between">
               <div>
-                <span className="badge badge-success mb-2">● Sedang Tampil</span>
+                <span className="badge badge-success mb-2 text-xs px-2 py-0.5">● Sedang Tampil</span>
                 <h2 className="font-display text-2xl font-bold text-white mt-1">{sesi.peserta.nama}</h2>
-                <p className="text-sm text-slate-300">{sesi.peserta.asal_jemaat}</p>
+                <p className="text-sm text-white/80">{sesi.peserta.asal_jemaat}</p>
                 {sesi.peserta.mazmur_bacaan && (
-                  <p className="text-amber-300 font-semibold mt-1">📖 {sesi.peserta.mazmur_bacaan}</p>
+                  <p className="text-white font-semibold mt-1">📖 {sesi.peserta.mazmur_bacaan}</p>
                 )}
               </div>
               {!sesi.nilai_dikunci ? (
@@ -191,15 +191,15 @@ export default function AdminSesiTab({ activeEvent }: Props) {
             </div>
           </div>
         ) : (
-          <div className="p-4 rounded-lg bg-slate-700/30 border border-slate-700 text-slate-400 text-sm">
+          <div className="p-4 rounded-lg bg-[var(--color-cream-1)] border border-[var(--color-border-dark)] text-[var(--color-text-muted)] text-sm">
             Belum ada peserta yang diaktifkan.
           </div>
         )}
       </div>
 
       {/* Aktifkan Peserta */}
-      <div className="glass-card p-5 space-y-4">
-        <h3 className="font-display text-lg font-semibold text-white flex items-center gap-2">
+      <div className="panel p-5 space-y-4">
+        <h3 className="font-display text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
           ▶️ Aktifkan Peserta Berikutnya
         </h3>
 
@@ -256,8 +256,8 @@ export default function AdminSesiTab({ activeEvent }: Props) {
       </div>
 
       {/* Pengumuman */}
-      <div className="glass-card p-5 space-y-3">
-        <h3 className="font-display text-lg font-semibold text-white flex items-center gap-2">
+      <div className="panel p-5 space-y-3">
+        <h3 className="font-display text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
           📢 Pengumuman ke Juri
         </h3>
         <textarea

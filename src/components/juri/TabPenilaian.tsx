@@ -256,12 +256,12 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
   if (!sesi?.peserta) {
     return (
-      <div className="glass-card p-10 text-center">
-        <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 animate-pulse">
+      <div className="panel p-10 text-center">
+        <div className="w-16 h-16 rounded-full bg-[var(--color-cream-2)] border border-[var(--color-border-dark)] flex items-center justify-center mx-auto mb-4 animate-pulse">
           ⏳
         </div>
-        <h3 className="font-display text-xl text-white mb-2">Menunggu Peserta</h3>
-        <p className="text-slate-400 text-sm">
+        <h3 className="font-display text-xl text-[var(--color-text)] mb-2">Menunggu Peserta</h3>
+        <p className="text-[var(--color-text-muted)] text-sm">
           Operator Sesi belum memulai penampilan peserta.
         </p>
       </div>
@@ -273,31 +273,31 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   return (
     <div className="space-y-5 animate-fade-in-up">
       {/* Peserta Banner */}
-      <div className="glass-card p-6 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
+      <div className="panel p-6 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
         
         <div className="flex justify-between items-start">
           <div>
-            <div className="inline-block px-3 py-1 rounded-full bg-slate-800 text-amber-400 text-xs font-bold tracking-widest uppercase mb-3">
+            <div className="inline-block px-3 py-1 rounded-full bg-[var(--color-cream-2)] border border-[var(--color-border-dark)] text-[var(--color-amber-dark)] text-xs font-bold tracking-widest uppercase mb-3">
               {sesi.kategori?.nama} • Peserta {sesi.peserta.nomor_undian}
             </div>
-            <h2 className="font-display text-3xl font-bold text-white mb-1">
+            <h2 className="font-display text-3xl font-bold text-[var(--color-text)] mb-1">
               {sesi.peserta.nama}
             </h2>
-            <p className="text-slate-400">{sesi.peserta.asal_jemaat}</p>
+            <p className="text-[var(--color-text-muted)]">{sesi.peserta.asal_jemaat}</p>
           </div>
           <div className="text-right">
-            <div className="text-sm text-slate-500 uppercase tracking-widest mb-1">Nilai Akhir Anda</div>
-            <div className="text-4xl font-display font-bold text-gold-gradient">
+            <div className="text-sm text-[var(--color-text-muted)] uppercase tracking-widest mb-1">Nilai Akhir Anda</div>
+            <div className="text-4xl font-display font-bold text-[var(--color-amber-dark)]">
               {total.toFixed(2)}
             </div>
           </div>
         </div>
 
         {sesi.peserta.mazmur_bacaan && (
-          <div className="mt-4 pt-4 border-t border-slate-700/50">
-            <span className="text-xs text-slate-500 uppercase">Bacaan Mazmur</span>
-            <p className="text-lg text-blue-400 font-semibold">{sesi.peserta.mazmur_bacaan}</p>
+          <div className="mt-4 pt-4 border-t border-[var(--color-border-dark)]">
+            <span className="text-xs text-[var(--color-text-muted)] uppercase">Bacaan Mazmur</span>
+            <p className="text-lg text-blue-600 font-semibold">{sesi.peserta.mazmur_bacaan}</p>
           </div>
         )}
       </div>
@@ -312,7 +312,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
             className={`p-8 rounded-2xl border transition-all duration-300 font-display font-semibold text-xl text-center shadow-lg relative overflow-hidden group
               ${scores[k.key] > 0 
                 ? 'bg-gradient-to-br from-amber-600 to-amber-700 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]' 
-                : 'bg-slate-800/80 border-slate-700 hover:bg-slate-700/80 hover:border-amber-500/50 text-slate-300'}`}
+                : 'bg-[var(--color-cream-1)] border-[var(--color-border)] hover:bg-[var(--color-cream-2)] hover:border-[var(--color-amber-dark)] text-[var(--color-text)]'}`}
           >
             <span className="relative z-10">{k.label}</span>
             {scores[k.key] > 0 && (
@@ -330,19 +330,19 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         <button 
           disabled={isLocked}
           onClick={() => setActiveModal('perhatian')}
-          className="p-8 sm:col-span-2 rounded-2xl border-2 bg-slate-900/50 border-red-900/50 hover:bg-red-900/30 hover:border-red-500/50 transition-all duration-300 font-display font-semibold text-xl text-red-400 shadow-lg"
+          className="p-8 sm:col-span-2 rounded-2xl border-2 bg-[var(--color-cream-1)] border-red-200 hover:bg-red-50 hover:border-red-400 transition-all duration-300 font-display font-semibold text-xl text-red-600 shadow-lg"
         >
           Perhatian (Pengurang Nilai)
         </button>
 
         {/* Catatan */}
-        <div className="sm:col-span-2 glass-card p-6 mt-4">
-          <label className="form-label text-amber-400 font-display text-lg mb-3 block">Catatan Juri</label>
+        <div className="sm:col-span-2 panel p-6 mt-4">
+          <label className="form-label text-[var(--color-amber-dark)] font-display text-lg mb-3 block">Catatan Juri</label>
           <textarea
             disabled={isLocked}
             value={scores.catatan}
             onChange={(e) => setScores({ ...scores, catatan: e.target.value })}
-            className="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none"
+            className="w-full bg-white border border-[var(--color-border)] rounded-xl p-4 text-[var(--color-text)] focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none"
             rows={4}
             placeholder="Tulis catatan untuk peserta ini..."
           />
@@ -493,8 +493,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           </button>
         </div>
       ) : (
-        <div className="glass-card p-4 text-center border-green-500/30 bg-green-500/5">
-          <p className="text-green-400 font-semibold mb-2">
+        <div className="panel p-4 text-center border-green-500/30 bg-green-50">
+          <p className="text-green-600 font-semibold mb-2">
             ✅ Nilai telah disubmit untuk peserta ini
           </p>
           {!sesi.nilai_dikunci && (
@@ -503,7 +503,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
             </button>
           )}
           {sesi.nilai_dikunci && (
-            <p className="text-amber-500 text-xs mt-2">
+            <p className="text-[var(--color-amber-dark)] text-xs mt-2">
               🔒 Sesi ini sudah dikunci oleh IP. Anda tidak dapat mengajukan VAR.
             </p>
           )}
@@ -513,9 +513,9 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       {/* Modal VAR */}
       {showVarModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 animate-fade-in-up">
-            <h3 className="font-display text-xl font-semibold text-white mb-4">Pengajuan VAR</h3>
-            <p className="text-sm text-slate-400 mb-4">
+          <div className="panel w-full max-w-md p-6 animate-fade-in-up">
+            <h3 className="font-display text-xl font-semibold text-[var(--color-text)] mb-4">Pengajuan VAR</h3>
+            <p className="text-sm text-[var(--color-text-muted)] mb-4">
               Silakan tuliskan alasan Anda melakukan revisi nilai. Formulir nilai Anda akan terbuka kembali setelah ini.
             </p>
             <form onSubmit={handleAjukanVAR} className="space-y-4">

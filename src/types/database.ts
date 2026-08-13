@@ -43,6 +43,9 @@ export type Database = {
           id: string
           logo_url: string | null
           nama_penyelenggara: string | null
+          homepage_title: string | null
+          homepage_subtitle: string | null
+          homepage_content: string | null
           created_at: string
           updated_at: string
         }
@@ -50,6 +53,9 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nama_penyelenggara?: string | null
+          homepage_title?: string | null
+          homepage_subtitle?: string | null
+          homepage_content?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -57,6 +63,9 @@ export type Database = {
           id?: string
           logo_url?: string | null
           nama_penyelenggara?: string | null
+          homepage_title?: string | null
+          homepage_subtitle?: string | null
+          homepage_content?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -98,15 +98,15 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
   }
 
   const statusBadge = (status: string) => {
-    if (status === 'tampil') return <span className="badge badge-success">● Tampil</span>
-    if (status === 'selesai') return <span className="badge badge-info">✓ Selesai</span>
-    return <span className="badge" style={{ background: 'rgba(51,65,85,0.5)', color: '#94a3b8' }}>Menunggu</span>
+    if (status === 'tampil') return <span className="badge badge-success text-xs px-2 py-0.5">● Tampil</span>
+    if (status === 'selesai') return <span className="badge badge-info text-xs px-2 py-0.5">✓ Selesai</span>
+    return <span className="badge bg-gray-200 text-gray-700 text-xs px-2 py-0.5">Menunggu</span>
   }
 
   if (!activeEvent) {
     return (
-      <div className="glass-card p-10 text-center">
-        <p className="text-slate-500">Tidak ada event aktif. Buat event di tab Event terlebih dahulu.</p>
+      <div className="panel p-10 text-center">
+        <p className="text-[var(--color-text-muted)]">Tidak ada event aktif. Buat event di tab Event terlebih dahulu.</p>
       </div>
     )
   }
@@ -116,8 +116,8 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display text-lg font-semibold text-white">👤 Manajemen Peserta</h3>
-          <p className="text-xs text-slate-400">{pesertaList.length} peserta terdaftar</p>
+          <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">👤 Manajemen Peserta</h3>
+          <p className="text-xs text-[var(--color-text-muted)]">{pesertaList.length} peserta terdaftar</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true) }} className="btn-primary">
           + Tambah Peserta
@@ -126,8 +126,8 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
 
       {/* Form */}
       {showForm && (
-        <div className="glass-card p-5">
-          <h4 className="font-semibold text-white mb-4">{editId ? 'Edit Peserta' : 'Tambah Peserta Baru'}</h4>
+        <div className="panel">
+          <h4 className="font-semibold text-[var(--color-text)] mb-4">{editId ? 'Edit Peserta' : 'Tambah Peserta Baru'}</h4>
           <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="form-label">Nama Lengkap *</label>
@@ -170,18 +170,18 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
       )}
 
       {/* List */}
-      <div className="glass-card overflow-hidden">
+      <div className="panel p-0 overflow-hidden">
         {isLoading ? (
           <div className="p-10 flex justify-center"><div className="spinner" style={{ width: 32, height: 32 }} /></div>
         ) : pesertaList.length === 0 ? (
           <div className="p-10 text-center">
             <div className="text-4xl mb-3">👥</div>
-            <p className="text-slate-500 text-sm">Belum ada peserta terdaftar</p>
+            <p className="text-[var(--color-text-muted)] text-sm">Belum ada peserta terdaftar</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead>
+            <table className="table-container">
+              <thead className="table-header">
                 <tr>
                   <th>No</th>
                   <th>Nama Peserta</th>
@@ -195,23 +195,23 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
                 {pesertaList.map((p) => {
                   const kat = kategoriList.find((k) => k.id === p.kategori_id)
                   return (
-                    <tr key={p.id}>
-                      <td className="font-bold text-amber-400">{p.nomor_undian ?? '-'}</td>
+                    <tr key={p.id} className="table-row">
+                      <td className="font-bold text-[var(--color-amber-dark)]">{p.nomor_undian ?? '-'}</td>
                       <td>
-                        <div className="font-semibold text-white">{p.nama}</div>
+                        <div className="font-semibold text-[var(--color-text)]">{p.nama}</div>
                         {p.potongan_nilai > 0 && (
-                          <div className="text-xs text-red-400">-{p.potongan_nilai} poin</div>
+                          <div className="text-xs text-red-600">-{p.potongan_nilai} poin</div>
                         )}
                       </td>
-                      <td className="hidden md:table-cell text-slate-300">{p.asal_jemaat}</td>
+                      <td className="hidden md:table-cell text-[var(--color-text-muted)]">{p.asal_jemaat}</td>
                       <td className="hidden md:table-cell">
-                        <span className="badge badge-info">{kat?.nama ?? '-'}</span>
+                        <span className="badge badge-info text-xs px-2 py-0.5">{kat?.nama ?? '-'}</span>
                       </td>
                       <td>{statusBadge(p.status)}</td>
                       <td>
                         <div className="flex gap-2">
-                          <button onClick={() => handleEdit(p)} className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:text-amber-400 hover:border-amber-400 transition-all">Edit</button>
-                          <button onClick={() => handleDelete(p.id)} className="text-xs px-2 py-1 rounded border border-red-700/50 text-red-400 hover:bg-red-500/10 transition-all">Hapus</button>
+                          <button onClick={() => handleEdit(p)} className="text-xs px-2 py-1 rounded border border-[var(--color-border-dark)] text-[var(--color-text-muted)] hover:text-[var(--color-amber-dark)] hover:border-[var(--color-amber-dark)] transition-all bg-[var(--color-cream-1)]">Edit</button>
+                          <button onClick={() => handleDelete(p.id)} className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50 transition-all bg-white">Hapus</button>
                         </div>
                       </td>
                     </tr>

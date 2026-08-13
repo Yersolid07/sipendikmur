@@ -58,19 +58,19 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
   }, [activeEvent, sesi?.peserta?.id, supabase])
 
   useEffect(() => {
-    const interval = setInterval(pollSesi, 5000)
+    const interval = setInterval(pollSesi, 3000)
     return () => clearInterval(interval)
   }, [pollSesi])
 
   if (!activeEvent) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <div className="glass-card p-10">
+        <div className="panel p-10">
           <div className="text-5xl mb-4">📖</div>
-          <h2 className="font-display text-2xl font-semibold text-white mb-2">
+          <h2 className="font-display text-2xl font-semibold text-[var(--color-text)] mb-2">
             Belum Ada Event Aktif
           </h2>
-          <p className="text-slate-400 text-sm max-w-sm">
+          <p className="text-[var(--color-text-muted)] text-sm max-w-sm">
             Inspektur Pertandingan belum mengaktifkan event. Silakan tunggu instruksi lebih lanjut.
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
           <h1 className="font-display text-3xl font-bold text-gold-gradient">
             Panel Juri
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">
             {activeEvent.nama}
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
           <span className="badge badge-gold">
             {profile.nama}
           </span>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
             Update: {lastUpdate.toLocaleTimeString('id-ID')}
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
         <div className="performer-banner animate-fade-in-up">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <p className="text-xs font-semibold text-white/90 uppercase tracking-widest mb-1 flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" />
                 Sedang Tampil
               </p>
@@ -113,35 +113,35 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
                 {sesi.peserta.nama}
               </h2>
               <div className="flex items-center gap-3 mt-1.5">
-                <span className="text-sm text-slate-300">{sesi.peserta.asal_jemaat}</span>
+                <span className="text-sm text-white/80">{sesi.peserta.asal_jemaat}</span>
                 {sesi.peserta.nomor_undian && (
                   <span className="badge badge-gold text-xs">No. {sesi.peserta.nomor_undian}</span>
                 )}
                 {sesi.kategori && (
-                  <span className="badge badge-info text-xs">{sesi.kategori.nama}</span>
+                  <span className="badge badge-info text-xs px-2 py-0.5">{sesi.kategori.nama}</span>
                 )}
               </div>
             </div>
             {sesi.peserta.mazmur_bacaan && (
               <div className="text-right ml-4">
-                <p className="text-xs text-slate-500 mb-1">Mazmur</p>
-                <p className="font-display text-lg font-semibold text-amber-300">
+                <p className="text-xs text-white/70 mb-1">Mazmur</p>
+                <p className="font-display text-lg font-semibold text-white">
                   {sesi.peserta.mazmur_bacaan}
                 </p>
               </div>
             )}
           </div>
           {sesi.pengumuman && (
-            <div className="mt-3 p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm">
+            <div className="mt-3 p-2 rounded-lg bg-blue-100 border border-blue-300 text-blue-800 text-sm">
               📢 {sesi.pengumuman}
             </div>
           )}
         </div>
       ) : (
-        <div className="performer-banner" style={{ borderColor: 'rgba(51,65,85,0.5)', background: 'rgba(30,41,59,0.3)' }}>
+        <div className="panel p-4" style={{ borderColor: 'var(--color-border-dark)', background: 'var(--color-cream-1)' }}>
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-slate-500 inline-block" />
-            <p className="text-slate-400 text-sm">
+            <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
+            <p className="text-[var(--color-text-muted)] text-sm">
               {sesi?.status === 'jeda'
                 ? '⏸️ Sesi sedang dijeda. Tunggu instruksi berikutnya.'
                 : 'Menunggu peserta berikutnya...'}

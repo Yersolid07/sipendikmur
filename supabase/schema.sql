@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS public.settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   logo_url TEXT,
   nama_penyelenggara TEXT DEFAULT 'BUMOTIK GMIM',
+  homepage_title TEXT DEFAULT 'BUMOTIK GMIM',
+  homepage_subtitle TEXT DEFAULT 'Sistem Penilaian Baca Mazmur',
+  homepage_content TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -106,15 +106,15 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   }
 
   if (!activeEvent) {
-    return <div className="text-center p-6 text-slate-400">Silakan aktifkan event terlebih dahulu.</div>
+    return <div className="text-center p-6 text-[var(--color-text-muted)]">Silakan aktifkan event terlebih dahulu.</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="font-display font-semibold text-white">Kategori & Bobot Nilai</h3>
-          <p className="text-xs text-slate-400">Atur parameter lomba untuk {activeEvent.nama}</p>
+          <h3 className="font-display font-semibold text-[var(--color-text)]">Kategori & Bobot Nilai</h3>
+          <p className="text-xs text-[var(--color-text-muted)]">Atur parameter lomba untuk {activeEvent.nama}</p>
         </div>
         <button onClick={() => {
           setEditId(null)
@@ -140,51 +140,51 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
               <label className="form-label">Jenis Lomba</label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="jenis" checked={jenisLomba === 'perorangan'} onChange={() => setJenisLomba('perorangan')} className="text-amber-500" />
-                  <span className="text-slate-200">👤 Perorangan</span>
+                  <input type="radio" name="jenis" checked={jenisLomba === 'perorangan'} onChange={() => setJenisLomba('perorangan')} className="text-[var(--color-amber)]" />
+                  <span className="text-[var(--color-text)]">👤 Perorangan</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="jenis" checked={jenisLomba === 'beregu'} onChange={() => setJenisLomba('beregu')} className="text-amber-500" />
-                  <span className="text-slate-200">👥 Beregu</span>
+                  <input type="radio" name="jenis" checked={jenisLomba === 'beregu'} onChange={() => setJenisLomba('beregu')} className="text-[var(--color-amber)]" />
+                  <span className="text-[var(--color-text)]">👥 Beregu</span>
                 </label>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-700/50">
-            <h4 className="text-sm font-semibold text-slate-300 mb-3">Bobot Penilaian (%)</h4>
+          <div className="pt-4 border-t border-[var(--color-border)]">
+            <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">Bobot Penilaian (%)</h4>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {jenisLomba === 'beregu' && (
                 <div>
                   <label className="form-label text-xs">Kekompakan</label>
-                  <input type="number" step="0.01" value={wKekompakan} onChange={e => setWKekompakan(Number(e.target.value))} className="form-input text-center text-amber-500 font-bold" />
+                  <input type="number" step="0.01" value={wKekompakan} onChange={e => setWKekompakan(Number(e.target.value))} className="form-input text-center text-[var(--color-amber-dark)] font-bold" />
                 </div>
               )}
               <div>
                 <label className="form-label text-xs">Interpretasi</label>
-                <input type="number" step="0.01" value={wInterpretasi} onChange={e => setWInterpretasi(Number(e.target.value))} className="form-input text-center text-amber-500 font-bold" />
+                <input type="number" step="0.01" value={wInterpretasi} onChange={e => setWInterpretasi(Number(e.target.value))} className="form-input text-center text-[var(--color-amber-dark)] font-bold" />
               </div>
               <div>
                 <label className="form-label text-xs">Penghayatan</label>
-                <input type="number" step="0.01" value={wPenghayatan} onChange={e => setWPenghayatan(Number(e.target.value))} className="form-input text-center text-amber-500 font-bold" />
+                <input type="number" step="0.01" value={wPenghayatan} onChange={e => setWPenghayatan(Number(e.target.value))} className="form-input text-center text-[var(--color-amber-dark)] font-bold" />
               </div>
               <div>
                 <label className="form-label text-xs">Artikulasi</label>
-                <input type="number" step="0.01" value={wArtikulasi} onChange={e => setWArtikulasi(Number(e.target.value))} className="form-input text-center text-amber-500 font-bold" />
+                <input type="number" step="0.01" value={wArtikulasi} onChange={e => setWArtikulasi(Number(e.target.value))} className="form-input text-center text-[var(--color-amber-dark)] font-bold" />
               </div>
               <div>
                 <label className="form-label text-xs">Penampilan</label>
-                <input type="number" step="0.01" value={wPenampilan} onChange={e => setWPenampilan(Number(e.target.value))} className="form-input text-center text-amber-500 font-bold" />
+                <input type="number" step="0.01" value={wPenampilan} onChange={e => setWPenampilan(Number(e.target.value))} className="form-input text-center text-[var(--color-amber-dark)] font-bold" />
               </div>
             </div>
             
             {/* Total Indicator */}
-            <div className="mt-4 flex justify-between items-center bg-slate-900/50 p-3 rounded-lg">
-              <span className="text-sm text-slate-400">Total Bobot:</span>
+            <div className="mt-4 flex justify-between items-center bg-[var(--color-cream-2)] p-3 rounded-lg border border-[var(--color-border)]">
+              <span className="text-sm text-[var(--color-text-muted)]">Total Bobot:</span>
               <span className={`text-lg font-bold ${
                 (jenisLomba === 'perorangan' ? wInterpretasi + wPenghayatan + wArtikulasi + wPenampilan : wKekompakan + wInterpretasi + wPenghayatan + wArtikulasi + wPenampilan) === 100 
-                  ? 'text-green-400' 
-                  : 'text-red-400'
+                  ? 'text-green-600' 
+                  : 'text-red-600'
               }`}>
                 {jenisLomba === 'perorangan' ? wInterpretasi + wPenghayatan + wArtikulasi + wPenampilan : wKekompakan + wInterpretasi + wPenghayatan + wArtikulasi + wPenampilan}%
               </span>
@@ -203,27 +203,27 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {kategoris.map(k => (
-            <div key={k.id} className="glass-card p-4 hover:border-amber-500/30 transition-colors group">
+            <div key={k.id} className="glass-card p-4 hover:border-[var(--color-amber-light)] transition-colors group">
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h4 className="font-semibold text-white">{k.nama}</h4>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${k.jenis_lomba === 'perorangan' ? 'bg-blue-500/20 text-blue-300' : 'bg-purple-500/20 text-purple-300'}`}>
+                  <h4 className="font-semibold text-[var(--color-text)]">{k.nama}</h4>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${k.jenis_lomba === 'perorangan' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                     {k.jenis_lomba === 'perorangan' ? '👤 Perorangan' : '👥 Beregu'}
                   </span>
                 </div>
-                <button onClick={() => handleEdit(k)} className="text-slate-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">✏️</button>
+                <button onClick={() => handleEdit(k)} className="text-[var(--color-text-light)] hover:text-[var(--color-amber-dark)] opacity-0 group-hover:opacity-100 transition-opacity">✏️</button>
               </div>
-              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-400 mt-3 border-t border-slate-700/50 pt-2">
-                {k.jenis_lomba === 'beregu' && <div>Kekompakan: <span className="text-slate-200">{k.maks_kekompakan}%</span></div>}
-                <div>Interpretasi: <span className="text-slate-200">{k.maks_interpretasi}%</span></div>
-                <div>Penghayatan: <span className="text-slate-200">{k.maks_penghayatan}%</span></div>
-                <div>Artikulasi: <span className="text-slate-200">{k.maks_artikulasi}%</span></div>
-                <div>Penampilan: <span className="text-slate-200">{k.maks_penampilan}%</span></div>
+              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-xs text-[var(--color-text-muted)] mt-3 border-t border-[var(--color-border)] pt-2">
+                {k.jenis_lomba === 'beregu' && <div>Kekompakan: <span className="font-semibold text-[var(--color-text)]">{k.maks_kekompakan}%</span></div>}
+                <div>Interpretasi: <span className="font-semibold text-[var(--color-text)]">{k.maks_interpretasi}%</span></div>
+                <div>Penghayatan: <span className="font-semibold text-[var(--color-text)]">{k.maks_penghayatan}%</span></div>
+                <div>Artikulasi: <span className="font-semibold text-[var(--color-text)]">{k.maks_artikulasi}%</span></div>
+                <div>Penampilan: <span className="font-semibold text-[var(--color-text)]">{k.maks_penampilan}%</span></div>
               </div>
             </div>
           ))}
           {kategoris.length === 0 && !showForm && (
-            <div className="col-span-2 text-center text-slate-500 py-10">Belum ada kategori untuk event ini.</div>
+            <div className="col-span-2 text-center text-[var(--color-text-muted)] py-10">Belum ada kategori untuk event ini.</div>
           )}
         </div>
       )}

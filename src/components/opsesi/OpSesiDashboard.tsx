@@ -133,8 +133,8 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
   if (!activeEvent) {
     return (
-      <div className="glass-card p-10 text-center">
-        <h2 className="text-xl font-bold text-white">Tidak Ada Event Aktif</h2>
+      <div className="panel p-10 text-center">
+        <h2 className="text-xl font-bold text-[var(--color-text)]">Tidak Ada Event Aktif</h2>
       </div>
     )
   }
@@ -143,19 +143,19 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-green-500">
+      <div className="panel p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-green-600">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">Control Panel Sesi Panggung</h1>
-          <p className="text-slate-400 text-sm mt-1">{activeEvent.nama}</p>
+          <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Control Panel Sesi Panggung</h1>
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">{activeEvent.nama}</p>
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Left Column: Stage Control */}
         <div className="space-y-6">
-          <div className="glass-card p-6">
-            <h3 className="font-semibold text-white mb-4">Mulai Penampilan Baru</h3>
-            <p className="text-sm text-slate-400 mb-4">
+          <div className="panel p-6">
+            <h3 className="font-semibold text-[var(--color-text)] mb-4">Mulai Penampilan Baru</h3>
+            <p className="text-sm text-[var(--color-text-muted)] mb-4">
               Pilih peserta dari daftar yang sudah check-in. Tombol ini akan otomatis membuka form nilai di layar Juri.
             </p>
 
@@ -163,7 +163,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
               <div>
                 <label className="form-label">Pilih Peserta (Hanya yang sudah Check-In)</label>
                 <select 
-                  className="form-input bg-slate-900 border-slate-700"
+                  className="form-input bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
                   value={selectedPesertaId}
                   onChange={e => setSelectedPesertaId(e.target.value)}
                 >
@@ -174,7 +174,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-amber-500/80 mt-1">Sistem memungkinkan loncat sesi atau urutan tanpa batas.</p>
+                <p className="text-xs text-[var(--color-amber-dark)] mt-1">Sistem memungkinkan loncat sesi atau urutan tanpa batas.</p>
               </div>
 
               {selectedPesertaId && (
@@ -200,8 +200,8 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
             </div>
           </div>
 
-          <div className="glass-card p-6">
-            <h3 className="font-semibold text-white mb-4">Broadcast Pengumuman</h3>
+          <div className="panel p-6">
+            <h3 className="font-semibold text-[var(--color-text)] mb-4">Broadcast Pengumuman</h3>
             <textarea 
               value={pengumuman} 
               onChange={e => setPengumuman(e.target.value)}
@@ -217,22 +217,22 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
         {/* Right Column: Active Status */}
         <div className="space-y-6">
-          <div className={`glass-card p-6 border-2 transition-colors ${sesi?.status === 'berjalan' ? 'border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]' : 'border-slate-700/50'}`}>
-            <h3 className="font-semibold text-white mb-4 flex justify-between items-center">
+          <div className={`panel p-6 border-2 transition-colors ${sesi?.status === 'berjalan' ? 'border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.1)]' : 'border-[var(--color-border-dark)]'}`}>
+            <h3 className="font-semibold text-[var(--color-text)] mb-4 flex justify-between items-center">
               <span>Status Panggung Saat Ini</span>
-              {sesi?.status === 'berjalan' && <span className="badge badge-success animate-pulse">LIVE</span>}
-              {sesi?.status === 'jeda' && <span className="badge badge-warning">JEDA (Nilai Dikunci)</span>}
+              {sesi?.status === 'berjalan' && <span className="badge badge-success animate-pulse text-xs px-2 py-0.5">LIVE</span>}
+              {sesi?.status === 'jeda' && <span className="badge badge-warning text-xs px-2 py-0.5">JEDA (Nilai Dikunci)</span>}
             </h3>
 
             {sesi?.peserta ? (
               <div className="space-y-4">
-                <div className="p-4 bg-slate-900/50 rounded-xl">
-                  <div className="text-sm text-slate-400 mb-1">Sedang Tampil:</div>
-                  <div className="text-2xl font-bold text-white mb-1">{sesi.peserta.nama}</div>
-                  <div className="text-amber-500">{sesi.kategori?.nama}</div>
+                <div className="p-4 bg-[var(--color-cream-2)] rounded-xl border border-[var(--color-border)]">
+                  <div className="text-sm text-[var(--color-text-muted)] mb-1">Sedang Tampil:</div>
+                  <div className="text-2xl font-bold text-[var(--color-text)] mb-1">{sesi.peserta.nama}</div>
+                  <div className="text-[var(--color-amber-dark)]">{sesi.kategori?.nama}</div>
                   {sesi.peserta.mazmur_bacaan && (
-                    <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10 text-sm">
-                      📖 <span className="text-slate-300">{sesi.peserta.mazmur_bacaan}</span>
+                    <div className="mt-3 p-3 bg-[var(--color-cream-1)] rounded-lg border border-[var(--color-border-dark)] text-sm">
+                      📖 <span className="text-[var(--color-text-muted)]">{sesi.peserta.mazmur_bacaan}</span>
                     </div>
                   )}
                 </div>
@@ -242,13 +242,13 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                     🔒 Kunci Nilai & Jeda Sesi
                   </button>
                 ) : (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-200 text-sm text-center">
+                  <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-sm text-center">
                     Nilai telah dikunci. Juri tidak dapat mengubah nilai lagi.
                   </div>
                 )}
               </div>
             ) : (
-              <div className="p-10 text-center text-slate-500 border border-dashed border-slate-700 rounded-xl">
+              <div className="p-10 text-center text-[var(--color-text-muted)] border border-dashed border-[var(--color-border-dark)] rounded-xl">
                 Belum ada peserta yang aktif di panggung.
               </div>
             )}

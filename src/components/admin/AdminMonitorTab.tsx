@@ -62,14 +62,14 @@ export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 8000)
+    const interval = setInterval(loadData, 3000)
     return () => clearInterval(interval)
   }, [loadData])
 
   if (!activeEvent) {
     return (
-      <div className="glass-card p-10 text-center">
-        <p className="text-slate-500">Tidak ada event aktif untuk dimonitor.</p>
+      <div className="panel text-center">
+        <p className="text-[var(--color-text-muted)]">Tidak ada event aktif untuk dimonitor.</p>
       </div>
     )
   }
@@ -84,17 +84,17 @@ export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-semibold text-white">
+        <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">
           📊 Monitor Nilai Real-time
         </h3>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-[var(--color-text-muted)]">
           Update: {lastUpdate.toLocaleTimeString('id-ID')} · auto refresh 8s
         </span>
       </div>
 
       {/* Juri Status */}
-      <div className="glass-card p-4">
-        <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-3">Status Juri</p>
+      <div className="panel">
+        <p className="text-xs text-[var(--color-text-muted)] font-semibold uppercase tracking-wide mb-3">Status Juri</p>
         <div className="flex flex-wrap gap-2">
           {juriList.map((j) => {
             const hasSubmitted = data.some((d) => d.juri_id === j.id && d.is_submitted)
@@ -104,14 +104,14 @@ export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
                 key={j.id}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm ${
                   hasSubmitted
-                    ? 'bg-green-500/10 border-green-500/30 text-green-300'
+                    ? 'bg-green-100 border-green-300 text-green-800'
                     : hasDraft
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                    : 'bg-slate-700/30 border-slate-700 text-slate-400'
+                    ? 'bg-amber-100 border-amber-300 text-amber-800'
+                    : 'bg-gray-100 border-gray-300 text-gray-500'
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full ${
-                  hasSubmitted ? 'bg-green-400' : hasDraft ? 'bg-amber-400 animate-pulse' : 'bg-slate-500'
+                  hasSubmitted ? 'bg-green-500' : hasDraft ? 'bg-amber-500 animate-pulse' : 'bg-gray-400'
                 }`} />
                 {j.nama}
                 {hasSubmitted && ' ✓'}
@@ -124,12 +124,12 @@ export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
 
       {/* Penilaian table per peserta */}
       {isLoading ? (
-        <div className="glass-card p-10 flex justify-center">
+        <div className="panel flex justify-center">
           <div className="spinner" style={{ width: 32, height: 32 }} />
         </div>
       ) : Object.keys(byPeserta).length === 0 ? (
-        <div className="glass-card p-10 text-center">
-          <p className="text-slate-500 text-sm">Belum ada nilai masuk</p>
+        <div className="panel text-center">
+          <p className="text-[var(--color-text-muted)] text-sm">Belum ada nilai masuk</p>
         </div>
       ) : (
         Object.entries(byPeserta).map(([pesertaId, rows]) => {
@@ -140,56 +140,58 @@ export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
             : null
 
           return (
-            <div key={pesertaId} className="glass-card overflow-hidden">
-              <div className="p-4 border-b border-slate-700 flex items-center justify-between">
+            <div key={pesertaId} className="panel p-0 overflow-hidden">
+              <div className="p-4 border-b border-[var(--color-border-dark)] bg-[var(--color-cream-2)] flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold text-white">{pesertaNama}</h4>
-                  <p className="text-xs text-slate-500">
+                  <h4 className="font-semibold text-[var(--color-text)]">{pesertaNama}</h4>
+                  <p className="text-xs text-[var(--color-text-muted)]">
                     {rows.filter((r) => r.is_submitted).length}/{juriList.length} juri sudah submit
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end gap-1">
                   {avgTotal && (
-                    <span className="font-display text-2xl font-bold text-amber-400">{avgTotal}</span>
+                    <span className="font-display text-2xl font-bold text-[var(--color-text)]">{avgTotal}</span>
                   )}
-                  {allSubmitted && <div className="badge badge-success text-xs">✓ Semua submit</div>}
+                  {allSubmitted && <div className="badge badge-success text-xs py-0.5 px-2">✓ Semua submit</div>}
                 </div>
               </div>
 
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Juri</th>
-                    <th>Kompak</th>
-                    <th>Interp</th>
-                    <th>Artik</th>
-                    <th className="hidden sm:table-cell">Pengh</th>
-                    <th className="hidden sm:table-cell">Penamp</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <tr key={r.juri_id}>
-                      <td className="font-medium text-white">{r.juri_nama}</td>
-                      <td className="text-red-400">{r.kekompakan ?? <span className="text-slate-600">-</span>}</td>
-                      <td className="text-amber-400">{r.interpretasi ?? <span className="text-slate-600">-</span>}</td>
-                      <td className="text-blue-400">{r.artikulasi ?? <span className="text-slate-600">-</span>}</td>
-                      <td className="hidden sm:table-cell text-purple-400">{r.penghayatan ?? <span className="text-slate-600">-</span>}</td>
-                      <td className="hidden sm:table-cell text-green-400">{r.penampilan ?? <span className="text-slate-600">-</span>}</td>
-                      <td className="font-bold text-white">{r.total.toFixed(1)}</td>
-                      <td>
-                        {r.is_submitted ? (
-                          <span className="badge badge-success">✓ Submit</span>
-                        ) : (
-                          <span className="badge badge-warning">Draft</span>
-                        )}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="table-container">
+                  <thead className="table-header">
+                    <tr>
+                      <th>Juri</th>
+                      <th>Kompak</th>
+                      <th>Interp</th>
+                      <th>Artik</th>
+                      <th className="hidden sm:table-cell">Pengh</th>
+                      <th className="hidden sm:table-cell">Penamp</th>
+                      <th>Total</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.juri_id} className="table-row">
+                        <td className="font-medium text-[var(--color-text)]">{r.juri_nama}</td>
+                        <td className="text-red-600">{r.kekompakan ?? <span className="text-gray-400">-</span>}</td>
+                        <td className="text-[var(--color-amber-dark)]">{r.interpretasi ?? <span className="text-gray-400">-</span>}</td>
+                        <td className="text-blue-600">{r.artikulasi ?? <span className="text-gray-400">-</span>}</td>
+                        <td className="hidden sm:table-cell text-purple-600">{r.penghayatan ?? <span className="text-gray-400">-</span>}</td>
+                        <td className="hidden sm:table-cell text-green-600">{r.penampilan ?? <span className="text-gray-400">-</span>}</td>
+                        <td className="font-bold text-[var(--color-text)]">{r.total.toFixed(1)}</td>
+                        <td>
+                          {r.is_submitted ? (
+                            <span className="badge badge-success text-xs px-2 py-0.5">✓ Submit</span>
+                          ) : (
+                            <span className="badge badge-warning text-xs px-2 py-0.5">Draft</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         })

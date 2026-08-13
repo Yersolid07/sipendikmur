@@ -23,12 +23,12 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between panel">
         <div>
-          <h1 className="font-display text-3xl font-bold text-gold-gradient">
+          <h1 className="font-display text-3xl font-bold text-[var(--color-text)]">
             Panel Inspektur
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">
             {profile.role === 'superadmin' ? 'Administrator' : 'Inspektur Pertandingan'} — {profile.nama}
           </p>
         </div>
@@ -38,7 +38,7 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
               ● {activeEvent.nama}
             </span>
           ) : (
-            <span className="badge badge-warning">Tidak ada event aktif</span>
+            <span className="badge badge-error">Tidak ada event aktif</span>
           )}
         </div>
       </div>
@@ -73,18 +73,18 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="overflow-x-auto">
-        <div className="tab-list min-w-max md:min-w-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="tab-container">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`tab-btn ${
+              activeTab === tab.id ? 'tab-btn-active' : 'tab-btn-inactive'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Tab Content */}
@@ -114,21 +114,21 @@ function StatCard({
   isText?: boolean
 }) {
   const colorMap = {
-    amber: 'rgba(201,168,76,0.15)',
-    blue: 'rgba(59,130,246,0.15)',
-    purple: 'rgba(168,85,247,0.15)',
-    green: 'rgba(34,197,94,0.15)',
+    amber: 'rgba(201,133,44,0.1)',
+    blue: 'rgba(37,99,235,0.1)',
+    purple: 'rgba(147,51,234,0.1)',
+    green: 'rgba(22,163,74,0.1)',
   }
   const textMap = {
-    amber: '#e2c97e',
-    blue: '#93c5fd',
-    purple: '#d8b4fe',
-    green: '#86efac',
+    amber: 'var(--color-amber-dark)',
+    blue: '#1e40af',
+    purple: '#6b21a8',
+    green: '#166534',
   }
 
   return (
     <div
-      className="glass-card p-4 text-center"
+      className="panel p-4 text-center border-none"
       style={{ background: colorMap[color] }}
     >
       <div className="text-2xl mb-1">{icon}</div>
@@ -138,7 +138,7 @@ function StatCard({
       >
         {value}
       </div>
-      <p className="text-xs text-slate-400">{label}</p>
+      <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
     </div>
   )
 }

@@ -148,24 +148,24 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
 
   if (!activeEvent) {
     return (
-      <div className="glass-card p-10 text-center">
-        <h2 className="text-xl font-bold text-white">Tidak Ada Event Aktif</h2>
-        <p className="text-slate-400 mt-2">Hubungi Superadmin untuk mengaktifkan event.</p>
+      <div className="panel p-10 text-center">
+        <h2 className="text-xl font-bold text-[var(--color-text)]">Tidak Ada Event Aktif</h2>
+        <p className="text-[var(--color-text-muted)] mt-2">Hubungi Superadmin untuk mengaktifkan event.</p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="glass-card p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 border-l-4 border-l-blue-500">
+      <div className="panel p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 border-l-4 border-l-blue-600">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">Panel Registrasi & Cetak Hasil</h1>
-          <p className="text-slate-400 text-sm mt-1">{activeEvent.nama}</p>
+          <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Panel Registrasi & Cetak Hasil</h1>
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">{activeEvent.nama}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-sm text-slate-400">Total Check-In</div>
-            <div className="text-xl font-bold text-blue-400">{pesertaList.filter(p => p.is_checked_in).length} / {pesertaList.length}</div>
+            <div className="text-sm text-[var(--color-text-muted)]">Total Check-In</div>
+            <div className="text-xl font-bold text-blue-600">{pesertaList.filter(p => p.is_checked_in).length} / {pesertaList.length}</div>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
           onChange={e => setSearch(e.target.value)}
         />
         <select 
-          className="form-input sm:w-64 bg-slate-900 border-slate-700"
+          className="form-input sm:w-64 bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
           value={kategoriFilter}
           onChange={e => setKategoriFilter(e.target.value)}
         >
@@ -193,53 +193,53 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
       {isLoading ? (
         <div className="text-center p-10"><span className="spinner" /></div>
       ) : (
-        <div className="glass-card overflow-hidden">
+        <div className="panel p-0 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-800/50 text-slate-400">
+            <table className="table-container">
+              <thead className="table-header">
                 <tr>
-                  <th className="p-4">No. Urut</th>
-                  <th className="p-4">Kategori</th>
-                  <th className="p-4">Nama Peserta / Utusan</th>
-                  <th className="p-4">Status & Nilai</th>
-                  <th className="p-4 text-center">Kehadiran</th>
-                  <th className="p-4 text-right">Aksi</th>
+                  <th>No. Urut</th>
+                  <th>Kategori</th>
+                  <th>Nama Peserta / Utusan</th>
+                  <th>Status & Nilai</th>
+                  <th className="text-center">Kehadiran</th>
+                  <th className="text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody>
                 {filtered.map(p => (
-                  <tr key={p.peserta_id} className="hover:bg-slate-800/30">
-                    <td className="p-4 text-lg font-display font-bold text-slate-500">{p.nomor_undian || '-'}</td>
-                    <td className="p-4">
-                      <span className="badge badge-info">{p.kategori}</span>
+                  <tr key={p.peserta_id} className="table-row">
+                    <td className="text-lg font-display font-bold text-[var(--color-text-muted)]">{p.nomor_undian || '-'}</td>
+                    <td>
+                      <span className="badge badge-info text-xs px-2 py-0.5">{p.kategori}</span>
                     </td>
-                    <td className="p-4">
-                      <div className="font-semibold text-white">{p.nama_peserta}</div>
-                      <div className="text-xs text-slate-400">{p.asal_jemaat}</div>
+                    <td>
+                      <div className="font-semibold text-[var(--color-text)]">{p.nama_peserta}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">{p.asal_jemaat}</div>
                     </td>
-                    <td className="p-4">
+                    <td>
                       <div className="text-xs mb-1">
                         {p.jumlah_juri_menilai === 3 ? (
-                          <span className="text-green-400">✅ Selesai Dinilai</span>
+                          <span className="text-green-600 font-semibold">✅ Selesai Dinilai</span>
                         ) : p.jumlah_juri_menilai > 0 ? (
-                          <span className="text-amber-400">⏳ Sedang Dinilai ({p.jumlah_juri_menilai}/3)</span>
+                          <span className="text-[var(--color-amber-dark)] font-semibold">⏳ Sedang Dinilai ({p.jumlah_juri_menilai}/3)</span>
                         ) : (
-                          <span className="text-slate-500">Belum Tampil</span>
+                          <span className="text-[var(--color-text-muted)]">Belum Tampil</span>
                         )}
                       </div>
                       {p.jumlah_juri_menilai === 3 && (
-                        <div className="font-bold text-white">Skor: {p.nilai_akhir}</div>
+                        <div className="font-bold text-[var(--color-text)]">Skor: {p.nilai_akhir}</div>
                       )}
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="text-center">
                       <button 
                         onClick={() => toggleCheckIn(p.peserta_id, p.is_checked_in)}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${p.is_checked_in ? 'bg-green-500' : 'bg-slate-700'}`}
+                        className={`w-12 h-6 rounded-full transition-colors relative ${p.is_checked_in ? 'bg-green-500' : 'bg-gray-300'}`}
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${p.is_checked_in ? 'left-7' : 'left-1'}`} />
                       </button>
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="text-right">
                       {p.jumlah_juri_menilai === 3 && (
                         <button onClick={() => printHasil(p)} className="btn-primary text-xs py-1.5 px-3">
                           🖨️ Cetak Hasil
@@ -250,7 +250,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center p-8 text-slate-500">Tidak ada peserta ditemukan.</td>
+                    <td colSpan={6} className="text-center p-8 text-[var(--color-text-muted)]">Tidak ada peserta ditemukan.</td>
                   </tr>
                 )}
               </tbody>

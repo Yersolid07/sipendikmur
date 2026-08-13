@@ -68,16 +68,16 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display text-lg font-semibold text-white">⚖️ Manajemen Juri</h3>
-          <p className="text-xs text-slate-400">{juriList.length} juri terdaftar</p>
+          <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">⚖️ Manajemen Juri</h3>
+          <p className="text-xs text-[var(--color-text-muted)]">{juriList.length} juri terdaftar</p>
         </div>
         <button onClick={() => setShowCreateForm(true)} className="btn-primary">+ Tambah Juri</button>
       </div>
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="glass-card p-5">
-          <h4 className="font-semibold text-white mb-4">Buat Akun Juri Baru</h4>
+        <div className="panel">
+          <h4 className="font-semibold text-[var(--color-text)] mb-4">Buat Akun Juri Baru</h4>
           <form onSubmit={handleCreateJuri} className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="form-label">Nama Lengkap *</label>
@@ -102,15 +102,15 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
       )}
 
       {/* Juri list */}
-      <div className="glass-card overflow-hidden">
+      <div className="panel p-0 overflow-hidden">
         {juriList.length === 0 ? (
           <div className="p-10 text-center">
             <div className="text-4xl mb-3">⚖️</div>
-            <p className="text-slate-500 text-sm">Belum ada akun juri</p>
+            <p className="text-[var(--color-text-muted)] text-sm">Belum ada akun juri</p>
           </div>
         ) : (
-          <table className="data-table">
-            <thead>
+          <table className="table-container">
+            <thead className="table-header">
               <tr>
                 <th>Nama Juri</th>
                 <th>Email</th>
@@ -120,20 +120,20 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
             </thead>
             <tbody>
               {juriList.map((j) => (
-                <tr key={j.id}>
-                  <td className="font-semibold text-white">{j.nama}</td>
-                  <td className="text-slate-400">{j.email}</td>
+                <tr key={j.id} className="table-row">
+                  <td className="font-semibold text-[var(--color-text)]">{j.nama}</td>
+                  <td className="text-[var(--color-text-muted)]">{j.email}</td>
                   <td>
                     {j.is_active ? (
-                      <span className="badge badge-success">● Aktif</span>
+                      <span className="badge badge-success text-xs px-2 py-0.5">● Aktif</span>
                     ) : (
-                      <span className="badge badge-error">Nonaktif</span>
+                      <span className="badge badge-error text-xs px-2 py-0.5">Nonaktif</span>
                     )}
                   </td>
                   <td>
                     <button
                       onClick={() => { setResetPasswordId(j.id); setNewPassword('') }}
-                      className="text-xs px-2 py-1 rounded border border-slate-600 text-slate-400 hover:text-amber-400 hover:border-amber-400 transition-all"
+                      className="text-xs px-2 py-1 rounded border border-[var(--color-border-dark)] text-[var(--color-text-muted)] hover:text-[var(--color-amber-dark)] hover:border-[var(--color-amber-dark)] transition-all bg-[var(--color-cream-1)]"
                     >
                       Reset Password
                     </button>
@@ -148,8 +148,8 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
       {/* Reset password modal */}
       {resetPasswordId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-sm p-6">
-            <h4 className="font-display text-xl font-semibold text-white mb-4">Reset Password Juri</h4>
+          <div className="panel w-full max-w-sm">
+            <h4 className="font-display text-xl font-semibold text-[var(--color-text)] mb-4">Reset Password Juri</h4>
             <div className="space-y-4">
               <div>
                 <label className="form-label">Password Baru</label>
