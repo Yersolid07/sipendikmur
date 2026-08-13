@@ -2,30 +2,30 @@
 
 /* ─── Design Tokens ─────────────────────────────────────── */
 :root {
-  /* Brand: Deep Navy + Gold (GMIM ecclesiastical feel) */
-  --color-brand-navy: #0c1631;
-  --color-brand-navy-light: #162046;
-  --color-brand-gold: #c9a84c;
-  --color-brand-gold-light: #e2c97e;
-  --color-brand-gold-dark: #9b7e35;
+  /* Brand: Maroon + Gold */
+  --color-brand-navy: #7f1d1d; /* Using maroon for buttons */
+  --color-brand-navy-light: #991b1b;
+  --color-brand-gold: #b48600;
+  --color-brand-gold-light: #eab308;
+  --color-brand-gold-dark: #854d0e;
 
-  /* Neutrals */
-  --color-surface: #0f172a;       /* slate-900 */
-  --color-surface-2: #1e293b;     /* slate-800 */
-  --color-surface-3: #334155;     /* slate-700 */
-  --color-border: #334155;
-  --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
+  /* Neutrals - Ivory Theme */
+  --color-surface: #fdfbf7;       /* Very light ivory/cream */
+  --color-surface-2: #ffffff;     /* Pure white */
+  --color-surface-3: #f3f4f6;     /* Light gray/cream */
+  --color-border: #e5e7eb;
+  --color-text: #27272a;          /* Dark gray/black for text */
+  --color-text-muted: #71717a;
 
   /* Status */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-info: #3b82f6;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
 
   /* Fonts */
-  --font-display: var(--font-cormorant), 'Georgia', serif;
-  --font-body: var(--font-jakarta), 'Inter', sans-serif;
+  --font-display: var(--font-playfair), 'Georgia', serif;
+  --font-body: var(--font-inter), 'Inter', sans-serif;
 }
 
 /* ─── Base ───────────────────────────────────────────────── */
@@ -67,12 +67,11 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(135deg, var(--color-brand-gold-dark), var(--color-brand-gold), var(--color-brand-gold-light));
 }
 
-/* ─── Glass Card ─────────────────────────────────────────── */
+/* ─── Glass & Cards ──────────────────────────────────────── */
 .glass-card {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(201, 168, 76, 0.15);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   border-radius: 1rem;
 }
 

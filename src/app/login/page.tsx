@@ -57,21 +57,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(12,22,49,0.9) 0%, #0f172a 100%)',
-        }}
-      />
-      {/* Decorative cross / mazmur ornament */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 opacity-5"
-        style={{
-          background: 'radial-gradient(circle, rgba(201,168,76,1) 0%, transparent 70%)',
-        }}
-      />
+    <div className="min-h-screen flex items-center justify-center relative bg-[var(--color-surface)]">
+      {/* Background - Removed dark radial gradients */}
+      <div className="absolute inset-0 bg-[var(--color-surface)]" />
+      {/* Removed the decorative cross / mazmur ornament */}
 
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo / Brand */}
@@ -79,20 +68,20 @@ export default function LoginPage() {
           <div className="relative mx-auto w-24 h-24 mb-4 drop-shadow-[0_0_30px_rgba(201,168,76,0.3)]">
             <img src="/Simbol_GMIM_free.png" alt="GMIM Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="font-display text-4xl font-bold text-gold-gradient mb-1">
+          <h1 className="font-display text-4xl font-bold text-slate-800 mb-1">
             GMIM
           </h1>
-          <p className="text-sm text-slate-400 font-medium tracking-wide">
+          <p className="text-sm text-slate-500 font-medium tracking-wide">
             Sistem Penjurian Baca Mazmur Digital
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="glass-card p-8 animate-fade-in-up">
-          <h2 className="font-display text-2xl font-semibold text-white mb-1">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 animate-fade-in-up">
+          <h2 className="font-display text-2xl font-semibold text-slate-800 mb-1">
             Masuk ke Sistem
           </h2>
-          <p className="text-sm text-slate-400 mb-6">
+          <p className="text-sm text-slate-500 mb-6">
             Masukkan kredensial yang diberikan panitia.
           </p>
 
@@ -109,35 +98,33 @@ export default function LoginPage() {
             <div>
               <label htmlFor="email" className="form-label">Email</label>
               <input
-                id="email"
                 type="email"
+                id="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
                 placeholder="nama@email.com"
-                required
-                autoComplete="email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="form-label">Password</label>
+              <label htmlFor="password" className="form-label text-slate-700">Password</label>
               <input
-                id="password"
                 type="password"
+                id="password"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
                 placeholder="••••••••"
-                required
-                autoComplete="current-password"
               />
             </div>
 
             <button
               type="submit"
               disabled={isPending}
-              className="btn-primary w-full mt-2"
+              className="w-full py-3 px-4 bg-[#7f1d1d] hover:bg-[#6c1919] text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {isPending ? (
                 <>

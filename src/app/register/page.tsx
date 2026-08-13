@@ -41,21 +41,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-12">
-      {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(12,22,49,0.9) 0%, #0f172a 100%)',
-        }}
-      />
-      {/* Decorative cross / mazmur ornament */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 opacity-5 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(201,168,76,1) 0%, transparent 70%)',
-        }}
-      />
+    <div className="min-h-screen flex items-center justify-center relative bg-[var(--color-surface)] py-12">
+      {/* Background - Removed dark gradients */}
+      <div className="absolute inset-0 bg-[var(--color-surface)]" />
+      {/* Removed the decorative cross / mazmur ornament */}
 
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo / Brand */}
@@ -68,16 +57,16 @@ export default function RegisterPage() {
               className="object-contain" 
             />
           </div>
-          <h1 className="font-display text-3xl font-bold text-gold-gradient mb-1">
+          <h1 className="font-display text-3xl font-bold text-slate-800 mb-1">
             Pendaftaran Akun
           </h1>
-          <p className="text-sm text-slate-400 font-medium tracking-wide">
+          <p className="text-sm text-slate-500 font-medium tracking-wide">
             Sistem Penjurian Baca Mazmur GMIM
           </p>
         </div>
 
         {/* Register Card */}
-        <div className="glass-card p-8 animate-fade-in-up shadow-2xl">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 animate-fade-in-up">
           {status && (
             <div className={`mb-6 p-4 rounded-xl border flex items-start gap-3 ${status.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
               <div className="mt-0.5">
@@ -89,48 +78,48 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister} className="space-y-5">
             <div>
-              <label className="form-label">Nama Lengkap</label>
+              <label className="form-label text-slate-700">Nama Lengkap</label>
               <input
                 type="text"
                 required
                 value={formData.nama}
                 onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
                 placeholder="Misal: Pnt. John Doe"
               />
             </div>
 
             <div>
-              <label className="form-label">Email</label>
+              <label className="form-label text-slate-700">Email</label>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
                 placeholder="nama@email.com"
               />
             </div>
 
             <div>
-              <label className="form-label">Password</label>
+              <label className="form-label text-slate-700">Password</label>
               <input
                 type="password"
                 required
                 minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
                 placeholder="Minimal 6 karakter"
               />
             </div>
 
             <div>
-              <label className="form-label">Peran (Role)</label>
+              <label className="form-label text-slate-700">Peran (Role)</label>
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="form-input"
+                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
               >
                 <option value="juri">Juri</option>
                 <option value="op_sesi">Operator Sesi</option>
@@ -141,7 +130,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl font-semibold transition-all shadow-[0_0_20px_rgba(217,119,6,0.2)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full py-3 px-4 bg-[#7f1d1d] hover:bg-[#6c1919] text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {isSubmitting ? 'Mendaftar...' : 'Daftar Sekarang'}
             </button>
