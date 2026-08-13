@@ -21,10 +21,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 -- RLS Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Superadmin and IP can view all profiles" ON public.profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'ip', 'op_sesi', 'op_regis'))
-);
+CREATE POLICY "All authenticated can view profiles" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
 -- Note: Service role (API) is used to create users.
 
 -- ============================================================
