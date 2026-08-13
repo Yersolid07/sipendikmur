@@ -37,7 +37,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
 
     const { data } = await supabase
       .from('sesi')
-      .select(`*, peserta:peserta_aktif_id(*), kategori(*)`)
+      .select('*, peserta:peserta_aktif_id(*), kategori:kategori_id(*)')
       .eq('event_id', activeEvent.id)
       .in('status', ['berjalan', 'menunggu'])
       .order('updated_at', { ascending: false })
@@ -45,13 +45,14 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
       .single()
 
     if (data) {
-      const newPesertaId = (data as ActiveSesi).peserta?.id
+      const typed = data as unknown as ActiveSesi
+      const newPesertaId = typed.peserta?.id
       const oldPesertaId = sesi?.peserta?.id
       if (newPesertaId !== oldPesertaId) {
         // Peserta changed — switch to penilaian tab
         setActiveTab('penilaian')
       }
-      setSesi(data as ActiveSesi)
+      setSesi(typed)
       setLastUpdate(new Date())
     }
   }, [activeEvent, sesi?.peserta?.id, supabase])

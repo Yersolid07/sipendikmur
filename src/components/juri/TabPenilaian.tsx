@@ -15,55 +15,37 @@ interface Props {
   activeEvent: Event
 }
 
-interface ScoreState {
-  interpretasi: number
-  artikulasi: number
-  penghayatan: number
-  penampilan: number
-  catatan: string
-}
-
-const KRITERIA = [
-  {
-    key: 'interpretasi' as const,
-    label: 'Interpretasi',
-    description: 'Pemahaman & penyampaian makna teologis teks Mazmur',
-    max: 25,
-    color: '#c9a84c',
-  },
-  {
-    key: 'artikulasi' as const,
-    label: 'Artikulasi',
-    description: 'Kejelasan pelafalan, ketepatan vokal dan bunyi',
-    max: 22,
-    color: '#3b82f6',
-  },
-  {
-    key: 'penghayatan' as const,
-    label: 'Penghayatan',
-    description: 'Kedalaman ekspresi dan rasa, suasana batin Mazmur',
-    max: 20,
-    color: '#a855f7',
-  },
-  {
-    key: 'penampilan' as const,
-    label: 'Penampilan',
-    description: 'Sikap tubuh, kepercayaan diri, kesesuaian busana',
-    max: 18,
-    color: '#22c55e',
-  },
-]
-
-const MAX_TOTAL = KRITERIA.reduce((sum, k) => sum + k.max, 0) // 85
-
 export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
-  const [scores, setScores] = useState<ScoreState>({
+  const [scores, setScores] = useState<any>({
+    kekompakan: 0,
     interpretasi: 0,
     artikulasi: 0,
     penghayatan: 0,
     penampilan: 0,
     catatan: '',
   })
+  
+  const [showVarModal, setShowVarModal] = useState(false)
+  const [varAlasan, setVarAlasan] = useState('')
+  const [varLokasi, setVarLokasi] = useState('')
+  
+  // Dynamic criteria
+  const k = sesi?.kategori
+  const isBeregu = k?.jenis_lomba === 'beregu'
+  
+  const KRITERIA = []
+  if (isBeregu) {
+    KRITERIA.push({ key: 'kekompakan', label: 'Kekompakan', description: 'Keserasian dan harmoni tim', max: k?.maks_kekompakan || 30, color: '#ef4444' })
+  }
+  KRITERIA.push(
+    { key: 'interpretasi', label: 'Interpretasi', description: 'Pemahaman & penyampaian makna', max: k?.maks_interpretasi || (isBeregu ? 20 : 35), color: '#c9a84c' },
+    { key: 'penghayatan', label: 'Penghayatan', description: 'Kedalaman ekspresi dan rasa', max: k?.maks_penghayatan || (isBeregu ? 25 : 30), color: '#a855f7' },
+    { key: 'artikulasi', label: 'Artikulasi', description: 'Kejelasan pelafalan', max: k?.maks_artikulasi || (isBeregu ? 20 : 25), color: '#3b82f6' },
+    { key: 'penampilan', label: 'Penampilan', description: 'Sikap tubuh, busana', max: k?.maks_penampilan || (isBeregu ? 5 : 10), color: '#22c55e' }
+  )
+  
+  const MAX_TOTAL = KRITERIA.reduce((sum, item) => sum + item.max, 0)
+
   const [existingPenilaian, setExistingPenilaian] = useState<Penilaian | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -72,7 +54,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
   const supabase = createClient()
 
-  const total = scores.interpretasi + scores.artikulasi + scores.penghayatan + scores.penampilan
+  const total = KRITERIA.reduce((sum, k) => sum + (scores[k.key] || 0), 0)
 
   // Load existing penilaian for current peserta
   useEffect(() => {
@@ -92,20 +74,22 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         .single()
 
       if (data) {
-        setExistingPenilaian(data)
-        setIsSubmitted(data.is_submitted)
+        const p = data as Penilaian
+        setExistingPenilaian(p)
+        setIsSubmitted(p.is_submitted)
         setScores({
-          interpretasi: data.interpretasi ?? 0,
-          artikulasi: data.artikulasi ?? 0,
-          penghayatan: data.penghayatan ?? 0,
-          penampilan: data.penampilan ?? 0,
-          catatan: data.catatan ?? '',
+          kekompakan: (p as any).kekompakan ?? 0,
+          interpretasi: p.interpretasi ?? 0,
+          artikulasi: p.artikulasi ?? 0,
+          penghayatan: p.penghayatan ?? 0,
+          penampilan: p.penampilan ?? 0,
+          catatan: p.catatan ?? '',
         })
       } else {
         // Reset for new peserta
         setExistingPenilaian(null)
         setIsSubmitted(false)
-        setScores({ interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '' })
+        setScores({ kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '' })
       }
       setIsLoading(false)
     }
@@ -126,6 +110,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       sesi_id: sesi.id,
       peserta_id: sesi.peserta_aktif_id,
       juri_id: profile.id,
+      kekompakan: isBeregu ? scores.kekompakan : null,
       interpretasi: scores.interpretasi,
       artikulasi: scores.artikulasi,
       penghayatan: scores.penghayatan,
@@ -135,10 +120,10 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     }
 
     if (existingPenilaian) {
-      await supabase.from('penilaian').update(payload).eq('id', existingPenilaian.id)
+      await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
     } else {
-      const { data } = await supabase.from('penilaian').insert(payload).select().single()
-      if (data) setExistingPenilaian(data)
+      const { data } = await supabase.from('penilaian').insert(payload as any).select().single()
+      if (data) setExistingPenilaian(data as Penilaian)
     }
     showToast('success', 'Draft nilai tersimpan')
   }
@@ -157,6 +142,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       sesi_id: sesi.id,
       peserta_id: sesi.peserta_aktif_id,
       juri_id: profile.id,
+      kekompakan: isBeregu ? scores.kekompakan : null,
       interpretasi: scores.interpretasi,
       artikulasi: scores.artikulasi,
       penghayatan: scores.penghayatan,
@@ -168,10 +154,10 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
     let err
     if (existingPenilaian) {
-      const res = await supabase.from('penilaian').update(payload).eq('id', existingPenilaian.id)
+      const res = await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
       err = res.error
     } else {
-      const res = await supabase.from('penilaian').insert(payload)
+      const res = await supabase.from('penilaian').insert(payload as any)
       err = res.error
     }
 
@@ -182,6 +168,35 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       setIsSubmitted(true)
       showToast('success', 'Nilai berhasil disubmit! ✓')
     }
+  }
+
+  async function handleAjukanVAR(e: React.FormEvent) {
+    e.preventDefault()
+    if (!existingPenilaian || !sesi?.peserta_aktif_id) return
+    setIsSubmitting(true)
+    
+    // 1. Catat Request VAR
+    const varPayload = {
+      penilaian_id: existingPenilaian.id,
+      peserta_id: sesi.peserta_aktif_id,
+      requested_by: profile.id,
+      requested_role: 'juri',
+      alasan: varAlasan,
+      lokasi_teks: varLokasi,
+      status: 'approved', // Juri langsung disetujui untuk VAR sendiri
+      resolved_at: new Date().toISOString()
+    }
+    await supabase.from('var_requests').insert(varPayload as any)
+
+    // 2. Unlock Penilaian
+    await supabase.from('penilaian').update({ is_submitted: false } as any).eq('id', existingPenilaian.id)
+    
+    setIsSubmitting(false)
+    setIsSubmitted(false)
+    setShowVarModal(false)
+    setVarAlasan('')
+    setVarLokasi('')
+    showToast('success', 'VAR dicatat. Silakan revisi nilai Anda.')
   }
 
   if (!sesi?.peserta) {
@@ -322,12 +337,66 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         </div>
       ) : (
         <div className="glass-card p-4 text-center border-green-500/30 bg-green-500/5">
-          <p className="text-green-400 font-semibold">
+          <p className="text-green-400 font-semibold mb-2">
             ✅ Nilai telah disubmit untuk peserta ini
           </p>
-          <p className="text-slate-500 text-xs mt-1">
-            Menunggu peserta berikutnya...
-          </p>
+          {!sesi.nilai_dikunci && (
+            <button onClick={() => setShowVarModal(true)} className="btn-secondary text-sm">
+              🎥 Ajukan VAR (Revisi Nilai)
+            </button>
+          )}
+          {sesi.nilai_dikunci && (
+            <p className="text-amber-500 text-xs mt-2">
+              🔒 Sesi ini sudah dikunci oleh IP. Anda tidak dapat mengajukan VAR.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Modal VAR */}
+      {showVarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-md p-6 animate-fade-in-up">
+            <h3 className="font-display text-xl font-semibold text-white mb-4">Pengajuan VAR</h3>
+            <p className="text-sm text-slate-400 mb-4">
+              Silakan tuliskan alasan Anda melakukan revisi nilai. Formulir nilai Anda akan terbuka kembali setelah ini.
+            </p>
+            <form onSubmit={handleAjukanVAR} className="space-y-4">
+              <div>
+                <label className="form-label">Alasan Revisi / VAR *</label>
+                <textarea
+                  required
+                  value={varAlasan}
+                  onChange={(e) => setVarAlasan(e.target.value)}
+                  className="form-input resize-none"
+                  rows={3}
+                  placeholder="Contoh: Kesalahan input nilai, cek ulang rekaman..."
+                />
+              </div>
+              <div>
+                <label className="form-label">Lokasi Teks / Menit (Opsional)</label>
+                <input
+                  type="text"
+                  value={varLokasi}
+                  onChange={(e) => setVarLokasi(e.target.value)}
+                  className="form-input"
+                  placeholder="Contoh: Mazmur 23:2 atau Menit 02:15"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowVarModal(false)}
+                  className="btn-secondary flex-1"
+                >
+                  Batal
+                </button>
+                <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
+                  Buka Kunci Nilai
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

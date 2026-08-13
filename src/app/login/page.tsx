@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Profile } from '@/types/database'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,17 +32,19 @@ export default function LoginPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single()
 
-      if (profile?.role === 'admin' || profile?.role === 'inspektur') {
-        router.push('/admin')
-      } else {
-        router.push('/dashboard')
-      }
+      const profile = profileData as Profile | null
+      if (profile?.role === 'superadmin') router.push('/superadmin')
+      else if (profile?.role === 'ip') router.push('/admin')
+      else if (profile?.role === 'op_regis') router.push('/op-regis')
+      else if (profile?.role === 'op_sesi') router.push('/op-sesi')
+      else router.push('/dashboard')
+      
       router.refresh()
     })
   }

@@ -1,5 +1,5 @@
 -- ============================================================
--- SISTEM PENJURIAN BACA MAZMUR GMIM
+-- SISTEM PENJURIAN BACA MAZMUR GMIM V2
 -- Supabase PostgreSQL Schema
 -- ============================================================
 
@@ -13,20 +13,32 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nama TEXT NOT NULL,
   email TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'juri', 'inspektur')),
+  role TEXT NOT NULL CHECK (role IN ('superadmin', 'op_regis', 'op_sesi', 'ip', 'juri')),
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS
+-- RLS Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view their own profile" ON public.profiles
-  FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Admins can view all profiles" ON public.profiles
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Superadmin and IP can view all profiles" ON public.profiles FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'ip', 'op_sesi', 'op_regis'))
+);
+-- Note: Service role (API) is used to create users.
+
+-- ============================================================
+-- TABLE: settings (Global CMS Config)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.settings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  logo_url TEXT,
+  nama_penyelenggara TEXT DEFAULT 'BUMOTIK GMIM',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "All authenticated can view settings" ON public.settings FOR SELECT USING (auth.uid() IS NOT NULL);
 
 -- ============================================================
 -- TABLE: events (Lomba/Event)
@@ -37,43 +49,41 @@ CREATE TABLE IF NOT EXISTS public.events (
   deskripsi TEXT,
   tanggal DATE,
   lokasi TEXT,
-  status TEXT NOT NULL DEFAULT 'aktif' CHECK (status IN ('aktif', 'selesai', 'draft')),
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('aktif', 'selesai', 'draft')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated can view events" ON public.events
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admin can manage events" ON public.events
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+CREATE POLICY "All authenticated can view events" ON public.events FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Superadmin can manage events" ON public.events FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
 
 -- ============================================================
--- TABLE: kategori (Seri A, A1, B, dst.)
+-- TABLE: kategori (Seri A, B, P/KB, dll) + Jenis Lomba
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.kategori (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  nama TEXT NOT NULL,           -- "Seri A", "Seri B", "Anak-anak", dll.
+  nama TEXT NOT NULL,
+  jenis_lomba TEXT NOT NULL DEFAULT 'perorangan' CHECK (jenis_lomba IN ('perorangan', 'beregu')),
   deskripsi TEXT,
   urutan INTEGER DEFAULT 1,
-  -- Bobot maksimal per kriteria
-  maks_interpretasi DECIMAL(5,2) DEFAULT 25.00,
-  maks_artikulasi DECIMAL(5,2) DEFAULT 22.00,
-  maks_penghayatan DECIMAL(5,2) DEFAULT 20.00,
-  maks_penampilan DECIMAL(5,2) DEFAULT 18.00,
+  -- Bobot digunakan di VIEW untuk kalkulasi akhir, tapi kita simpan di table agar fleksibel
+  maks_interpretasi DECIMAL(5,2),
+  maks_artikulasi DECIMAL(5,2),
+  maks_penghayatan DECIMAL(5,2),
+  maks_penampilan DECIMAL(5,2),
+  maks_kekompakan DECIMAL(5,2), -- Khusus Beregu
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.kategori ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated can view kategori" ON public.kategori
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admin can manage kategori" ON public.kategori
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+CREATE POLICY "All authenticated can view kategori" ON public.kategori FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Superadmin can manage kategori" ON public.kategori FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
 
 -- ============================================================
 -- TABLE: peserta
@@ -85,185 +95,221 @@ CREATE TABLE IF NOT EXISTS public.peserta (
   nama TEXT NOT NULL,
   asal_jemaat TEXT NOT NULL,
   nomor_undian INTEGER,
-  mazmur_bacaan TEXT,             -- Mazmur yang diundi untuk dibaca
-  status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'tampil', 'selesai')),
-  potongan_nilai DECIMAL(5,2) DEFAULT 0.00,  -- Pengurangan (misal: tidak hadir ibadah)
+  mazmur_bacaan TEXT,
+  is_checked_in BOOLEAN DEFAULT FALSE, -- Diatur oleh OpRegis
+  status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'bersiap', 'tampil', 'dinilai', 'selesai')),
+  potongan_nilai DECIMAL(5,2) DEFAULT 0.00,
   keterangan_potongan TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.peserta ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated can view peserta" ON public.peserta
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admin can manage peserta" ON public.peserta
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+CREATE POLICY "All authenticated can view peserta" ON public.peserta FOR SELECT USING (auth.uid() IS NOT NULL);
+-- Update dibolehkan untuk Superadmin, OpRegis, OpSesi, IP
+CREATE POLICY "Operators can manage peserta" ON public.peserta FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'op_regis', 'op_sesi', 'ip'))
+);
 
 -- ============================================================
--- TABLE: sesi (Sesi pertandingan aktif)
+-- TABLE: sesi (Kendali Stage oleh OpSesi)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.sesi (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  kategori_id UUID NOT NULL REFERENCES public.kategori(id) ON DELETE CASCADE,
-  peserta_aktif_id UUID REFERENCES public.peserta(id),  -- Peserta yang sedang tampil
+  kategori_id UUID NOT NULL REFERENCES public.kategori(id),
+  peserta_aktif_id UUID REFERENCES public.peserta(id), -- Peserta yang saat ini tampil (bisa diubah OpSesi bebas)
   nama_sesi TEXT,
   status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'berjalan', 'jeda', 'selesai')),
-  pengumuman TEXT,              -- Pengumuman dari inspektur ke juri
-  nilai_dikunci BOOLEAN DEFAULT FALSE,  -- Lock nilai setelah sesi selesai
+  pengumuman TEXT,
+  nilai_dikunci BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.sesi ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated can view sesi" ON public.sesi
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admin can manage sesi" ON public.sesi
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+CREATE POLICY "All authenticated can view sesi" ON public.sesi FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "OpSesi, IP, Superadmin can manage sesi" ON public.sesi FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'op_sesi', 'ip'))
+);
 
 -- ============================================================
--- TABLE: penilaian (Nilai dari Juri per Peserta)
+-- TABLE: penilaian (Input Juri)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.penilaian (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   sesi_id UUID NOT NULL REFERENCES public.sesi(id) ON DELETE CASCADE,
   peserta_id UUID NOT NULL REFERENCES public.peserta(id) ON DELETE CASCADE,
   juri_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  -- Nilai per kriteria
+  
+  -- Nilai Murni (1-100)
   interpretasi DECIMAL(5,2),
   artikulasi DECIMAL(5,2),
   penghayatan DECIMAL(5,2),
   penampilan DECIMAL(5,2),
-  -- Computed
-  total DECIMAL(6,2) GENERATED ALWAYS AS (
-    COALESCE(interpretasi, 0) + COALESCE(artikulasi, 0) +
-    COALESCE(penghayatan, 0) + COALESCE(penampilan, 0)
-  ) STORED,
+  kekompakan DECIMAL(5,2), -- Khusus beregu
+  
+  -- Total dinamis di-calculate di frontend atau VIEW
+  total DECIMAL(5,2) DEFAULT 0,
+  
   catatan TEXT,
   is_submitted BOOLEAN DEFAULT FALSE,
   submitted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  -- Satu juri hanya bisa nilai satu kali per peserta per sesi
-  UNIQUE (sesi_id, peserta_id, juri_id)
+  
+  UNIQUE(sesi_id, peserta_id, juri_id)
 );
 
 ALTER TABLE public.penilaian ENABLE ROW LEVEL SECURITY;
--- Juri bisa lihat dan edit nilai milik sendiri (sebelum submit)
-CREATE POLICY "Juri can view own penilaian" ON public.penilaian
-  FOR SELECT USING (auth.uid() = juri_id OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
-CREATE POLICY "Juri can insert own penilaian" ON public.penilaian
-  FOR INSERT WITH CHECK (auth.uid() = juri_id);
-CREATE POLICY "Juri can update own penilaian before submit" ON public.penilaian
-  FOR UPDATE USING (auth.uid() = juri_id AND is_submitted = FALSE);
-
--- ============================================================
--- TABLE: juri_sesi (Mapping juri ke sesi/event)
--- ============================================================
-CREATE TABLE IF NOT EXISTS public.juri_sesi (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-  juri_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (event_id, juri_id)
+CREATE POLICY "Juri can view and insert their own penilaian" ON public.penilaian FOR ALL USING (
+  juri_id = auth.uid() OR 
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'ip'))
 );
 
-ALTER TABLE public.juri_sesi ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated can view juri_sesi" ON public.juri_sesi
-  FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Admin can manage juri_sesi" ON public.juri_sesi
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'inspektur'))
-  );
+-- ============================================================
+-- TABLE: var_requests (Pengajuan VAR oleh Juri/IP)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.var_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  penilaian_id UUID REFERENCES public.penilaian(id) ON DELETE CASCADE,
+  peserta_id UUID NOT NULL REFERENCES public.peserta(id),
+  requested_by UUID NOT NULL REFERENCES public.profiles(id), -- Bisa Juri atau IP
+  requested_role TEXT NOT NULL CHECK (requested_role IN ('juri', 'ip')),
+  alasan TEXT NOT NULL,
+  lokasi_teks TEXT, -- Menit/teks yang dipertanyakan
+  
+  -- Jika dari IP, butuh persetujuan Juri
+  approved_by_juri_1 BOOLEAN DEFAULT FALSE,
+  approved_by_juri_2 BOOLEAN DEFAULT FALSE,
+  approved_by_juri_3 BOOLEAN DEFAULT FALSE,
+  
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+ALTER TABLE public.var_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "All authenticated can view VAR" ON public.var_requests FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Juri and IP can insert VAR" ON public.var_requests FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin'))
+);
+CREATE POLICY "Juri, IP and Superadmin can update VAR" ON public.var_requests FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin'))
+);
+
 
 -- ============================================================
--- VIEWS: Rekap Nilai (untuk ranking)
+-- TABLE: activity_logs (Audit Trail)
 -- ============================================================
-CREATE OR REPLACE VIEW public.v_rekap_penilaian AS
-SELECT
-  p.id AS peserta_id,
-  p.nama AS nama_peserta,
+CREATE TABLE IF NOT EXISTS public.activity_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  entity_id UUID,
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Only Superadmin can view logs" ON public.activity_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
+CREATE POLICY "System can insert logs" ON public.activity_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- ============================================================
+-- VIEW: v_rekap_penilaian (Perhitungan Otomatis Perorangan vs Beregu)
+-- ============================================================
+DROP VIEW IF EXISTS public.v_rekap_penilaian;
+CREATE VIEW public.v_rekap_penilaian AS
+SELECT 
+  p.id as peserta_id,
+  p.nama as nama_peserta,
   p.asal_jemaat,
   p.nomor_undian,
   p.mazmur_bacaan,
   p.potongan_nilai,
-  k.nama AS kategori,
-  k.id AS kategori_id,
-  e.nama AS event_nama,
-  e.id AS event_id,
-  COUNT(pn.juri_id) AS jumlah_juri_menilai,
-  ROUND(AVG(pn.interpretasi), 2) AS avg_interpretasi,
-  ROUND(AVG(pn.artikulasi), 2) AS avg_artikulasi,
-  ROUND(AVG(pn.penghayatan), 2) AS avg_penghayatan,
-  ROUND(AVG(pn.penampilan), 2) AS avg_penampilan,
-  ROUND(AVG(pn.total), 2) AS avg_total,
-  ROUND(AVG(pn.total) - p.potongan_nilai, 2) AS nilai_akhir,
+  p.is_checked_in,
+  k.nama as kategori,
+  k.id as kategori_id,
+  k.jenis_lomba,
+  e.nama as event_nama,
+  e.id as event_id,
+  COUNT(DISTINCT n.juri_id) as jumlah_juri_menilai,
+  
+  -- Rata-rata nilai murni dari Juri
+  AVG(n.interpretasi) as avg_interpretasi,
+  AVG(n.artikulasi) as avg_artikulasi,
+  AVG(n.penghayatan) as avg_penghayatan,
+  AVG(n.penampilan) as avg_penampilan,
+  AVG(n.kekompakan) as avg_kekompakan,
+  
+  -- Kalkulasi Total (Berdasarkan Jenis Lomba: Perorangan / Beregu)
+  -- Perorangan: Interpretasi(35) + Penghayatan(30) + Artikulasi(25) + Penampilan(10)
+  -- Beregu: Kekompakan(30) + Penghayatan(25) + Interpretasi(20) + Artikulasi(20) + Penampilan(5)
+  CAST(
+    CASE WHEN k.jenis_lomba = 'perorangan' THEN
+      (COALESCE(AVG(n.interpretasi), 0) * 0.35) + 
+      (COALESCE(AVG(n.penghayatan), 0) * 0.30) + 
+      (COALESCE(AVG(n.artikulasi), 0) * 0.25) + 
+      (COALESCE(AVG(n.penampilan), 0) * 0.10)
+    ELSE
+      (COALESCE(AVG(n.kekompakan), 0) * 0.30) +
+      (COALESCE(AVG(n.penghayatan), 0) * 0.25) +
+      (COALESCE(AVG(n.interpretasi), 0) * 0.20) +
+      (COALESCE(AVG(n.artikulasi), 0) * 0.20) +
+      (COALESCE(AVG(n.penampilan), 0) * 0.05)
+    END 
+  AS DECIMAL(10,2)) as avg_total,
+  
+  -- Nilai Akhir (setelah dikurangi potongan)
+  CAST(
+    (CASE WHEN k.jenis_lomba = 'perorangan' THEN
+      (COALESCE(AVG(n.interpretasi), 0) * 0.35) + 
+      (COALESCE(AVG(n.penghayatan), 0) * 0.30) + 
+      (COALESCE(AVG(n.artikulasi), 0) * 0.25) + 
+      (COALESCE(AVG(n.penampilan), 0) * 0.10)
+    ELSE
+      (COALESCE(AVG(n.kekompakan), 0) * 0.30) +
+      (COALESCE(AVG(n.penghayatan), 0) * 0.25) +
+      (COALESCE(AVG(n.interpretasi), 0) * 0.20) +
+      (COALESCE(AVG(n.artikulasi), 0) * 0.20) +
+      (COALESCE(AVG(n.penampilan), 0) * 0.05)
+    END) - COALESCE(p.potongan_nilai, 0)
+  AS DECIMAL(10,2)) as nilai_akhir,
+  
+  -- Ranking dalam kategori yang sama
   RANK() OVER (
-    PARTITION BY k.id
-    ORDER BY (ROUND(AVG(pn.total), 2) - p.potongan_nilai) DESC
-  ) AS ranking
+    PARTITION BY k.id 
+    ORDER BY (
+      (CASE WHEN k.jenis_lomba = 'perorangan' THEN
+        (COALESCE(AVG(n.interpretasi), 0) * 0.35) + (COALESCE(AVG(n.penghayatan), 0) * 0.30) + (COALESCE(AVG(n.artikulasi), 0) * 0.25) + (COALESCE(AVG(n.penampilan), 0) * 0.10)
+      ELSE
+        (COALESCE(AVG(n.kekompakan), 0) * 0.30) + (COALESCE(AVG(n.penghayatan), 0) * 0.25) + (COALESCE(AVG(n.interpretasi), 0) * 0.20) + (COALESCE(AVG(n.artikulasi), 0) * 0.20) + (COALESCE(AVG(n.penampilan), 0) * 0.05)
+      END) - COALESCE(p.potongan_nilai, 0)
+    ) DESC
+  ) as ranking
+
 FROM public.peserta p
 JOIN public.kategori k ON p.kategori_id = k.id
 JOIN public.events e ON p.event_id = e.id
-LEFT JOIN public.penilaian pn ON pn.peserta_id = p.id AND pn.is_submitted = TRUE
-GROUP BY p.id, p.nama, p.asal_jemaat, p.nomor_undian, p.mazmur_bacaan,
-         p.potongan_nilai, k.nama, k.id, e.nama, e.id;
+LEFT JOIN public.penilaian n ON p.id = n.peserta_id AND n.is_submitted = true
+GROUP BY p.id, k.id, e.id;
 
 -- ============================================================
--- FUNCTIONS
+-- TRIGGER: Update timestamp on table update
 -- ============================================================
-
--- Auto-update updated_at timestamp
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ language 'plpgsql';
 
--- Triggers untuk updated_at
-CREATE TRIGGER trg_profiles_updated_at BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_events_updated_at BEFORE UPDATE ON public.events
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_peserta_updated_at BEFORE UPDATE ON public.peserta
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_sesi_updated_at BEFORE UPDATE ON public.sesi
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-CREATE TRIGGER trg_penilaian_updated_at BEFORE UPDATE ON public.penilaian
-  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
-
--- Auto-create profile after signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, nama, role)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'nama', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'juri')
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- ============================================================
--- SEED DATA (Contoh)
--- ============================================================
-
--- Insert example event
--- INSERT INTO public.events (nama, deskripsi, tanggal, lokasi, status)
--- VALUES ('Lomba Baca Mazmur GMIM 2026', 'BUMOTIK - Benang Ungu Mazmur Oikumene Tahunan Integratif Komsit', '2026-08-01', 'GMIM Pusat', 'aktif');
+CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON public.events FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_peserta_updated_at BEFORE UPDATE ON public.peserta FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_sesi_updated_at BEFORE UPDATE ON public.sesi FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_penilaian_updated_at BEFORE UPDATE ON public.penilaian FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

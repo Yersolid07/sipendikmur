@@ -1,0 +1,51 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import Navbar from '@/components/shared/Navbar'
+import AdminDashboard from '@/components/admin/AdminDashboard'
+import { Profile, Event } from '@/types/database'
+
+export default async function AdminPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect('/login')
+
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  const profile = profileData as Profile | null
+  if (!profile) redirect('/login')
+  if (profile.role === 'juri') redirect('/dashboard')
+
+  // Get all events
+  const { data: eventsData } = await supabase
+    .from('events')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  // Get all juri profiles
+  const { data: juriData } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', 'juri')
+    .order('nama')
+
+  const events = (eventsData ?? []) as Event[]
+  const juriList = (juriData ?? []) as Profile[]
+
+  return (
+    <div className="min-h-screen">
+      <Navbar profile={profile} />
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <AdminDashboard
+          profile={profile}
+          events={events}
+          juriList={juriList}
+        />
+      </main>
+    </div>
+  )
+}
