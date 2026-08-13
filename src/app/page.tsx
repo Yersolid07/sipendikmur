@@ -60,12 +60,6 @@ export default async function HomePage() {
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 relative z-10 max-w-4xl mx-auto w-full">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase"
-          style={{ background: 'rgba(201,133,44,0.1)', border: '1px solid rgba(201,133,44,0.25)', color: 'var(--color-amber)' }}>
-          <span>●</span> Lomba Rohani GMIM
-        </div>
-
         {/* Main heading */}
         <h1 className="font-display mb-6 leading-tight" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 500, color: 'var(--color-text)' }}>
           Penilaian lomba baca Mazmur,{' '}
