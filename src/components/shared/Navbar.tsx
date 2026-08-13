@@ -83,7 +83,7 @@ export default function Navbar({ profile }: Props) {
             </svg>
           </div>
           <div>
-            <span className="font-display font-bold text-lg text-gold-gradient">BUMOTIK</span>
+            <span className="font-display font-bold text-lg text-gold-gradient">GMIM</span>
             <span className="hidden sm:inline text-xs text-slate-500 ml-2">Penjurian Baca Mazmur</span>
           </div>
         </div>

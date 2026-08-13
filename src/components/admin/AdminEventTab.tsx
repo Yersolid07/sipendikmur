@@ -97,7 +97,7 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
           <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="form-label">Nama Event *</label>
-              <input value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} className="form-input" required placeholder="Contoh: Lomba Baca Mazmur BUMOTIK 2026" />
+              <input value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} className="form-input" required placeholder="Contoh: Lomba Baca Mazmur P/KB 2026" />
             </div>
             <div>
               <label className="form-label">Tanggal</label>

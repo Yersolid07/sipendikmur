@@ -23,7 +23,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       <div className="glass-card p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-white">Superadmin Panel</h1>
-          <p className="text-slate-400 text-sm mt-1">God mode. Kelola semua aspek sistem BUMOTIK.</p>
+          <p className="text-slate-400 text-sm mt-1">God mode. Kelola semua aspek sistem penjurian.</p>
         </div>
         <div className="flex flex-col items-end">
           <span className="text-sm text-slate-400">Event Aktif:</span>

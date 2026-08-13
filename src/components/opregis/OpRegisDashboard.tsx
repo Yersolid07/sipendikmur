@@ -75,7 +75,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
       .eq('is_submitted', true)
       
     const doc = new jsPDF()
-    const brand = settings?.nama_penyelenggara || 'BUMOTIK GMIM'
+    const brand = settings?.nama_penyelenggara || 'Sistem Penjurian GMIM'
     
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')

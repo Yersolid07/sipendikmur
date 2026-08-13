@@ -15,13 +15,13 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'BUMOTIK - Sistem Penjurian Baca Mazmur GMIM',
+  title: 'Sistem Penjurian Baca Mazmur Digital GMIM',
   description:
-    'Aplikasi penilaian dan pemeringkatan lomba baca Mazmur GMIM — objektif, transparan, dan mudah digunakan oleh juri.',
-  keywords: ['GMIM', 'baca mazmur', 'penjurian', 'BUMOTIK', 'lomba mazmur'],
+    'Platform penilaian dan pemeringkatan lomba baca Mazmur GMIM — objektif, transparan, dan mudah digunakan.',
+  keywords: ['GMIM', 'baca mazmur', 'penjurian', 'lomba mazmur', 'sistem penjurian digital'],
   openGraph: {
-    title: 'BUMOTIK - Sistem Penjurian Baca Mazmur GMIM',
-    description: 'Aplikasi penilaian lomba baca Mazmur GMIM yang objektif dan transparan.',
+    title: 'Sistem Penjurian Baca Mazmur Digital GMIM',
+    description: 'Platform penilaian lomba baca Mazmur GMIM yang objektif dan transparan.',
     type: 'website',
   },
 }

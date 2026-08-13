@@ -75,7 +75,7 @@ export default function SettingsTab() {
               value={namaPenyelenggara} 
               onChange={e => setNamaPenyelenggara(e.target.value)} 
               className="form-input" 
-              placeholder="Contoh: BUMOTIK, GMIM, P/KB SINODE" 
+              placeholder="Contoh: P/KB SINODE, GMIM Wilayah Manado" 
             />
             <p className="text-xs text-slate-500 mt-1">Akan muncul di sebelah logo pada Navbar dan Kop Surat.</p>
           </div>
@@ -88,7 +88,7 @@ export default function SettingsTab() {
               className="form-input" 
               placeholder="https://..." 
             />
-            <p className="text-xs text-slate-500 mt-1">Masukkan link gambar (PNG/SVG) untuk mengganti logo default BUMOTIK.</p>
+            <p className="text-xs text-slate-500 mt-1">Masukkan link gambar (PNG/SVG) untuk mengganti logo default GMIM.</p>
           </div>
 
           {logoUrl && (

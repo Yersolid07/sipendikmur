@@ -100,7 +100,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
           )}
           <div>
             <h1 className="text-3xl font-display font-bold text-gold-gradient tracking-wide uppercase">
-              {settings?.nama_penyelenggara || 'BUMOTIK GMIM'}
+              {settings?.nama_penyelenggara || 'Sistem Penjurian GMIM'}
             </h1>
             <p className="text-xl text-slate-400 mt-1">{activeEvent.nama}</p>
           </div>

@@ -267,10 +267,10 @@ h1, h2, h3, h4, h5, h6 {
 .form-input {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--color-border);
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  color: var(--color-text);
+  color: #27272a;
   font-family: var(--font-body);
   font-size: 0.875rem;
   transition: all 0.2s;
@@ -278,21 +278,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .form-input:focus {
-  border-color: var(--color-brand-gold);
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  border-color: #7f1d1d;
+  box-shadow: 0 0 0 3px rgba(127, 29, 29, 0.08);
 }
 
 .form-input::placeholder {
-  color: var(--color-text-muted);
+  color: #9ca3af;
 }
 
 .form-label {
   display: block;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--color-text-muted);
+  color: #4b5563;
   margin-bottom: 0.375rem;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -351,9 +351,9 @@ h1, h2, h3, h4, h5, h6 {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(12, 22, 49, 0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+  background: rgba(253, 251, 247, 0.95);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid #e5e7eb;
   padding: 0.75rem 1.5rem;
 }
 
