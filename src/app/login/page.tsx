@@ -9,14 +9,15 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
   const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setIsPending(true)
 
-    startTransition(async () => {
+    try {
       const supabase = createClient()
       const { error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -25,35 +26,37 @@ export default function LoginPage() {
 
       if (authError) {
         setError('Email atau password salah. Silakan coba lagi.')
+        setIsPending(false)
         return
       }
 
-      // Get user role to redirect appropriately
+      // Check profile validity
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        setIsPending(false)
+        return
+      }
 
       const { data: profileData } = await supabase
         .from('profiles')
         .select('role, is_active')
         .eq('id', user.id)
         .single()
-
-      const profile = profileData as Profile | null
       
-      if (profile && profile.is_active === false) {
+      if (profileData && profileData.is_active === false) {
         await supabase.auth.signOut()
         setError('Akun Anda belum divalidasi admin. Silakan hubungi Panitia atau Admin.')
+        setIsPending(false)
         return
       }
 
-      if (profile?.role === 'superadmin') router.push('/superadmin')
-      else if (profile?.role === 'ip') router.push('/admin')
-      else if (profile?.role === 'op_regis') router.push('/op-regis')
-      else if (profile?.role === 'op_sesi') router.push('/op-sesi')
-      else router.push('/dashboard')
-      
-      router.refresh()
-    })
+      // Force a hard refresh. Since we are on /login, the middleware will intercept this
+      // and redirect the user to their specific dashboard based on their role.
+      window.location.reload()
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan')
+      setIsPending(false)
+    }
   }
 
   return (
