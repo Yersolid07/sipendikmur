@@ -1,0 +1,167 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    startTransition(async () => {
+      const supabase = createClient()
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (authError) {
+        setError('Email atau password salah. Silakan coba lagi.')
+        return
+      }
+
+      // Get user role to redirect appropriately
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.role === 'admin' || profile?.role === 'inspektur') {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
+      router.refresh()
+    })
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at 30% 20%, rgba(201,168,76,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 80%, rgba(12,22,49,0.9) 0%, #0f172a 100%)',
+        }}
+      />
+      {/* Decorative cross / mazmur ornament */}
+      <div
+        className="absolute top-0 right-0 w-96 h-96 opacity-5"
+        style={{
+          background: 'radial-gradient(circle, rgba(201,168,76,1) 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-md px-6">
+        {/* Logo / Brand */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-700 to-amber-500 mb-5 shadow-[0_0_40px_rgba(201,168,76,0.3)]">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              {/* Stylized cross + book */}
+              <rect x="17" y="4" width="6" height="32" rx="2" fill="white" opacity="0.9"/>
+              <rect x="8" y="13" width="24" height="6" rx="2" fill="white" opacity="0.9"/>
+            </svg>
+          </div>
+          <h1 className="font-display text-4xl font-bold text-gold-gradient mb-1">
+            BUMOTIK
+          </h1>
+          <p className="text-sm text-slate-400 font-medium tracking-wide">
+            Benang Ungu Mazmur Oikumene Tahunan
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            Sistem Penjurian Baca Mazmur GMIM
+          </p>
+        </div>
+
+        {/* Login Card */}
+        <div className="glass-card p-8 animate-fade-in-up">
+          <h2 className="font-display text-2xl font-semibold text-white mb-1">
+            Masuk ke Sistem
+          </h2>
+          <p className="text-sm text-slate-400 mb-6">
+            Masukkan kredensial yang diberikan panitia.
+          </p>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="form-label">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="form-input"
+                placeholder="nama@email.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="form-label">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="btn-primary w-full mt-2"
+            >
+              {isPending ? (
+                <>
+                  <span className="spinner" />
+                  Masuk...
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                  </svg>
+                  Masuk
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-slate-500 mt-6">
+            Untuk bantuan login, hubungi Inspektur Pertandingan
+          </p>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-xs text-slate-600 mt-6">
+          © 2026 GMIM — Sistem Penjurian Baca Mazmur Digital
+        </p>
+      </div>
+    </div>
+  )
+}
