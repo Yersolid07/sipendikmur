@@ -142,12 +142,15 @@ CREATE TABLE IF NOT EXISTS public.penilaian (
   peserta_id UUID NOT NULL REFERENCES public.peserta(id) ON DELETE CASCADE,
   juri_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   
-  -- Nilai Murni (1-100)
+  -- Nilai Grade (1-5)
   interpretasi DECIMAL(5,2),
   artikulasi DECIMAL(5,2),
   penghayatan DECIMAL(5,2),
   penampilan DECIMAL(5,2),
   kekompakan DECIMAL(5,2), -- Khusus beregu
+  
+  perhatian JSONB,
+  potongan_perhatian DECIMAL(5,2) DEFAULT 0,
   
   -- Total dinamis di-calculate di frontend atau VIEW
   total DECIMAL(5,2) DEFAULT 0,
@@ -245,38 +248,36 @@ SELECT
   AVG(n.penampilan) as avg_penampilan,
   AVG(n.kekompakan) as avg_kekompakan,
   
-  -- Kalkulasi Total (Berdasarkan Jenis Lomba: Perorangan / Beregu)
-  -- Perorangan: Interpretasi(35) + Penghayatan(30) + Artikulasi(25) + Penampilan(10)
-  -- Beregu: Kekompakan(30) + Penghayatan(25) + Interpretasi(20) + Artikulasi(20) + Penampilan(5)
+  -- Kalkulasi Total (Berdasarkan Jenis Lomba: Perorangan / Beregu) dan Konversi dari Grade (skala 5)
   CAST(
     CASE WHEN k.jenis_lomba = 'perorangan' THEN
-      (COALESCE(AVG(n.interpretasi), 0) * 0.35) + 
-      (COALESCE(AVG(n.penghayatan), 0) * 0.30) + 
-      (COALESCE(AVG(n.artikulasi), 0) * 0.25) + 
-      (COALESCE(AVG(n.penampilan), 0) * 0.10)
+      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + 
+      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + 
+      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + 
+      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
     ELSE
-      (COALESCE(AVG(n.kekompakan), 0) * 0.30) +
-      (COALESCE(AVG(n.penghayatan), 0) * 0.25) +
-      (COALESCE(AVG(n.interpretasi), 0) * 0.20) +
-      (COALESCE(AVG(n.artikulasi), 0) * 0.20) +
-      (COALESCE(AVG(n.penampilan), 0) * 0.05)
+      ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) +
+      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) +
+      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) +
+      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
+      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
     END 
   AS DECIMAL(10,2)) as avg_total,
   
-  -- Nilai Akhir (setelah dikurangi potongan)
+  -- Nilai Akhir (setelah dikurangi rata-rata potongan perhatian Juri dan potongan pusat IP/Superadmin)
   CAST(
     (CASE WHEN k.jenis_lomba = 'perorangan' THEN
-      (COALESCE(AVG(n.interpretasi), 0) * 0.35) + 
-      (COALESCE(AVG(n.penghayatan), 0) * 0.30) + 
-      (COALESCE(AVG(n.artikulasi), 0) * 0.25) + 
-      (COALESCE(AVG(n.penampilan), 0) * 0.10)
+      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + 
+      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + 
+      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + 
+      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
     ELSE
-      (COALESCE(AVG(n.kekompakan), 0) * 0.30) +
-      (COALESCE(AVG(n.penghayatan), 0) * 0.25) +
-      (COALESCE(AVG(n.interpretasi), 0) * 0.20) +
-      (COALESCE(AVG(n.artikulasi), 0) * 0.20) +
-      (COALESCE(AVG(n.penampilan), 0) * 0.05)
-    END) - COALESCE(p.potongan_nilai, 0)
+      ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) +
+      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) +
+      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) +
+      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
+      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
+    END) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
   AS DECIMAL(10,2)) as nilai_akhir,
   
   -- Ranking dalam kategori yang sama
@@ -284,10 +285,10 @@ SELECT
     PARTITION BY k.id 
     ORDER BY (
       (CASE WHEN k.jenis_lomba = 'perorangan' THEN
-        (COALESCE(AVG(n.interpretasi), 0) * 0.35) + (COALESCE(AVG(n.penghayatan), 0) * 0.30) + (COALESCE(AVG(n.artikulasi), 0) * 0.25) + (COALESCE(AVG(n.penampilan), 0) * 0.10)
+        ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
       ELSE
-        (COALESCE(AVG(n.kekompakan), 0) * 0.30) + (COALESCE(AVG(n.penghayatan), 0) * 0.25) + (COALESCE(AVG(n.interpretasi), 0) * 0.20) + (COALESCE(AVG(n.artikulasi), 0) * 0.20) + (COALESCE(AVG(n.penampilan), 0) * 0.05)
-      END) - COALESCE(p.potongan_nilai, 0)
+        ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) + ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) + ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) + ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) + ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
+      END) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
     ) DESC
   ) as ranking
 

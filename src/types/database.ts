@@ -271,6 +271,8 @@ export type Database = {
           penghayatan: number | null
           penampilan: number | null
           kekompakan: number | null
+          perhatian: any | null
+          potongan_perhatian: number | null
           total: number
           catatan: string | null
           is_submitted: boolean
@@ -288,6 +290,8 @@ export type Database = {
           penghayatan?: number | null
           penampilan?: number | null
           kekompakan?: number | null
+          perhatian?: any | null
+          potongan_perhatian?: number | null
           total?: number
           catatan?: string | null
           is_submitted?: boolean

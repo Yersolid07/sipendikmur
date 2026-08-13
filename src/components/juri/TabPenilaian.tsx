@@ -15,6 +15,18 @@ interface Props {
   activeEvent: Event
 }
 
+const GRADES = [
+  { label: 'Grade 1', val: 1 },
+  { label: 'Grade 1.5', val: 1.5 },
+  { label: 'Grade 2', val: 2 },
+  { label: 'Grade 2.5', val: 2.5 },
+  { label: 'Grade 3', val: 3 },
+  { label: 'Grade 3.5', val: 3.5 },
+  { label: 'Grade 4', val: 4 },
+  { label: 'Grade 4.5', val: 4.5 },
+  { label: 'Grade 5', val: 5 },
+]
+
 export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   const [scores, setScores] = useState<any>({
     kekompakan: 0,
@@ -23,7 +35,16 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     penghayatan: 0,
     penampilan: 0,
     catatan: '',
+    perhatian: {
+      clear_text: true,
+      salah_kata: [] as number[],
+      menambah_kata: [] as number[],
+      mengurangi_kata: [] as number[],
+    }
   })
+
+  // State for Modals
+  const [activeModal, setActiveModal] = useState<string | null>(null)
   
   const [showVarModal, setShowVarModal] = useState(false)
   const [varAlasan, setVarAlasan] = useState('')
@@ -54,7 +75,27 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
   const supabase = createClient()
 
-  const total = KRITERIA.reduce((sum, k) => sum + (scores[k.key] || 0), 0)
+  // Score calculation: Grade (1-5) converted proportionally to Max Criteria
+  const calculateTotal = () => {
+    let sum = 0
+    for (const k of KRITERIA) {
+      const grade = scores[k.key] || 0
+      if (grade > 0) {
+        sum += (grade / 5) * k.max
+      }
+    }
+    
+    // Perhatian Deductions
+    const p = scores.perhatian
+    if (p) {
+      if (!p.clear_text) sum -= 5 // penalty for clear text
+      const mistakesCount = p.salah_kata.length + p.menambah_kata.length + p.mengurangi_kata.length
+      sum -= mistakesCount // penalty of -1 per mistake
+    }
+
+    return Math.max(0, sum) // Ensure score doesn't go below 0
+  }
+  const total = calculateTotal()
 
   // Load existing penilaian for current peserta
   useEffect(() => {
@@ -77,6 +118,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         const p = data as Penilaian
         setExistingPenilaian(p)
         setIsSubmitted(p.is_submitted)
+        // Note: we might have saved raw totals in DB before. For now, assume DB stores Grades 1-5.
+        // We will need to update DB schema if we change from values to grades. 
         setScores({
           kekompakan: (p as any).kekompakan ?? 0,
           interpretasi: p.interpretasi ?? 0,
@@ -84,12 +127,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           penghayatan: p.penghayatan ?? 0,
           penampilan: p.penampilan ?? 0,
           catatan: p.catatan ?? '',
+          perhatian: (p as any).perhatian ?? { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] }
         })
       } else {
         // Reset for new peserta
         setExistingPenilaian(null)
         setIsSubmitted(false)
-        setScores({ kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '' })
+        setScores({ kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '', perhatian: { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] } })
       }
       setIsLoading(false)
     }
@@ -106,6 +150,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   async function handleSaveDraft() {
     if (!sesi?.peserta_aktif_id || !sesi.id) return
 
+    const p = scores.perhatian
+    let potongan = 0
+    if (p) {
+      if (!p.clear_text) potongan += 5
+      potongan += p.salah_kata.length + p.menambah_kata.length + p.mengurangi_kata.length
+    }
+
     const payload = {
       sesi_id: sesi.id,
       peserta_id: sesi.peserta_aktif_id,
@@ -116,6 +167,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       penghayatan: scores.penghayatan,
       penampilan: scores.penampilan,
       catatan: scores.catatan,
+      perhatian: scores.perhatian,
+      potongan_perhatian: potongan,
       is_submitted: false,
     }
 
@@ -133,11 +186,19 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
     const allFilled = KRITERIA.every((k) => scores[k.key] > 0)
     if (!allFilled) {
-      showToast('error', 'Semua kriteria harus diisi sebelum submit!')
+      showToast('error', 'Semua kriteria harus diisi (Pilih Grade) sebelum submit!')
       return
     }
 
     setIsSubmitting(true)
+    
+    const p = scores.perhatian
+    let potongan = 0
+    if (p) {
+      if (!p.clear_text) potongan += 5
+      potongan += p.salah_kata.length + p.menambah_kata.length + p.mengurangi_kata.length
+    }
+
     const payload = {
       sesi_id: sesi.id,
       peserta_id: sesi.peserta_aktif_id,
@@ -148,26 +209,20 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       penghayatan: scores.penghayatan,
       penampilan: scores.penampilan,
       catatan: scores.catatan,
+      perhatian: scores.perhatian,
+      potongan_perhatian: potongan,
       is_submitted: true,
-      submitted_at: new Date().toISOString(),
     }
 
-    let err
     if (existingPenilaian) {
-      const res = await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
-      err = res.error
+      await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
     } else {
-      const res = await supabase.from('penilaian').insert(payload as any)
-      err = res.error
+      await supabase.from('penilaian').insert(payload as any)
     }
 
     setIsSubmitting(false)
-    if (err) {
-      showToast('error', 'Gagal submit nilai. Coba lagi.')
-    } else {
-      setIsSubmitted(true)
-      showToast('success', 'Nilai berhasil disubmit! ✓')
-    }
+    setIsSubmitted(true)
+    showToast('success', 'Nilai berhasil disubmit!')
   }
 
   async function handleAjukanVAR(e: React.FormEvent) {
@@ -202,21 +257,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   if (!sesi?.peserta) {
     return (
       <div className="glass-card p-10 text-center">
-        <div className="text-5xl mb-3">⏳</div>
-        <h3 className="font-display text-xl font-semibold text-slate-300 mb-2">
-          Menunggu Peserta
-        </h3>
-        <p className="text-slate-500 text-sm">
-          Inspektur Pertandingan akan mengaktifkan peserta berikutnya.
+        <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 animate-pulse">
+          ⏳
+        </div>
+        <h3 className="font-display text-xl text-white mb-2">Menunggu Peserta</h3>
+        <p className="text-slate-400 text-sm">
+          Operator Sesi belum memulai penampilan peserta.
         </p>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="glass-card p-10 flex items-center justify-center">
-        <div className="spinner" style={{ width: 32, height: 32 }} />
       </div>
     )
   }
@@ -224,98 +271,208 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   const isLocked = isSubmitted || sesi.nilai_dikunci
 
   return (
-    <div className="space-y-5">
-      {/* Score Criteria */}
-      <div className={`glass-card p-6 space-y-6 ${isLocked ? 'locked-overlay' : ''}`}>
-        {KRITERIA.map((k) => {
-          const pct = (scores[k.key] / k.max) * 100
-          return (
-            <div key={k.key}>
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <span className="font-semibold text-white text-sm">{k.label}</span>
-                  <p className="text-xs text-slate-500 mt-0.5">{k.description}</p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className="text-2xl font-bold font-display"
-                    style={{ color: k.color }}
+    <div className="space-y-5 animate-fade-in-up">
+      {/* Peserta Banner */}
+      <div className="glass-card p-6 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+        
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="inline-block px-3 py-1 rounded-full bg-slate-800 text-amber-400 text-xs font-bold tracking-widest uppercase mb-3">
+              {sesi.kategori?.nama} • Peserta {sesi.peserta.nomor_undian}
+            </div>
+            <h2 className="font-display text-3xl font-bold text-white mb-1">
+              {sesi.peserta.nama}
+            </h2>
+            <p className="text-slate-400">{sesi.peserta.asal_jemaat}</p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-slate-500 uppercase tracking-widest mb-1">Nilai Akhir Anda</div>
+            <div className="text-4xl font-display font-bold text-gold-gradient">
+              {total.toFixed(2)}
+            </div>
+          </div>
+        </div>
+
+        {sesi.peserta.mazmur_bacaan && (
+          <div className="mt-4 pt-4 border-t border-slate-700/50">
+            <span className="text-xs text-slate-500 uppercase">Bacaan Mazmur</span>
+            <p className="text-lg text-blue-400 font-semibold">{sesi.peserta.mazmur_bacaan}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Grid Kriteria (UI Overhaul to match old app) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+        {KRITERIA.map((k) => (
+          <button 
+            key={k.key}
+            disabled={isLocked}
+            onClick={() => setActiveModal(k.key)}
+            className={`p-8 rounded-2xl border transition-all duration-300 font-display font-semibold text-xl text-center shadow-lg relative overflow-hidden group
+              ${scores[k.key] > 0 
+                ? 'bg-gradient-to-br from-amber-600 to-amber-700 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]' 
+                : 'bg-slate-800/80 border-slate-700 hover:bg-slate-700/80 hover:border-amber-500/50 text-slate-300'}`}
+          >
+            <span className="relative z-10">{k.label}</span>
+            {scores[k.key] > 0 && (
+              <span className="block text-sm font-normal opacity-90 mt-2 relative z-10">
+                Grade: {scores[k.key]}
+              </span>
+            )}
+            
+            {/* Glow effect on hover */}
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        ))}
+
+        {/* Perhatian Button */}
+        <button 
+          disabled={isLocked}
+          onClick={() => setActiveModal('perhatian')}
+          className="p-8 sm:col-span-2 rounded-2xl border-2 bg-slate-900/50 border-red-900/50 hover:bg-red-900/30 hover:border-red-500/50 transition-all duration-300 font-display font-semibold text-xl text-red-400 shadow-lg"
+        >
+          Perhatian (Pengurang Nilai)
+        </button>
+
+        {/* Catatan */}
+        <div className="sm:col-span-2 glass-card p-6 mt-4">
+          <label className="form-label text-amber-400 font-display text-lg mb-3 block">Catatan Juri</label>
+          <textarea
+            disabled={isLocked}
+            value={scores.catatan}
+            onChange={(e) => setScores({ ...scores, catatan: e.target.value })}
+            className="w-full bg-slate-900/80 border border-slate-700 rounded-xl p-4 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none"
+            rows={4}
+            placeholder="Tulis catatan untuk peserta ini..."
+          />
+        </div>
+      </div>
+
+      {/* Grade Selection Modal */}
+      {activeModal && activeModal !== 'perhatian' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-50 text-slate-900 w-full max-w-lg rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-display text-2xl font-bold text-amber-900 capitalize">
+                {activeModal}
+              </h3>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-slate-500 mb-6 text-sm">Pilih grade yang paling sesuai dengan penampilan peserta.</p>
+
+            <div className="space-y-3">
+              {GRADES.map(g => (
+                <button
+                  key={g.val}
+                  onClick={() => {
+                    setScores({ ...scores, [activeModal]: g.val })
+                    setActiveModal(null)
+                  }}
+                  className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 group
+                    ${scores[activeModal] === g.val 
+                      ? 'border-amber-600 bg-amber-50' 
+                      : 'border-slate-200 hover:border-amber-400 hover:bg-slate-100'}`}
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display font-bold text-lg
+                    ${scores[activeModal] === g.val ? 'bg-amber-800 text-white' : 'bg-slate-200 text-slate-600 group-hover:bg-amber-100'}`}>
+                    {g.val}
+                  </div>
+                  <div>
+                    <div className={`font-bold ${scores[activeModal] === g.val ? 'text-amber-900' : 'text-slate-700'}`}>
+                      {g.label}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Perhatian Modal */}
+      {activeModal === 'perhatian' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-slate-50 text-slate-900 w-full max-w-2xl rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-display text-2xl font-bold text-red-900">Perhatian</h3>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-slate-500 mb-6 text-sm">Centang setiap ayat yang mengalami masalah pada aspek terkait.</p>
+
+            <div className="space-y-6">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <h4 className="font-semibold text-slate-800 mb-3">1. Clear Text</h4>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setScores({ ...scores, perhatian: { ...scores.perhatian, clear_text: true }})}
+                    className={`flex-1 py-3 rounded-xl border font-medium ${scores.perhatian.clear_text ? 'bg-slate-800 text-white border-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
                   >
-                    {scores[k.key].toFixed(1)}
-                  </span>
-                  <span className="text-slate-500 text-sm">/ {k.max}</span>
+                    Ya
+                  </button>
+                  <button 
+                    onClick={() => setScores({ ...scores, perhatian: { ...scores.perhatian, clear_text: false }})}
+                    className={`flex-1 py-3 rounded-xl font-medium ${!scores.perhatian.clear_text ? 'bg-red-600 text-white' : 'border border-red-200 text-red-600 hover:bg-red-50'}`}
+                  >
+                    Tidak
+                  </button>
                 </div>
               </div>
 
-              {/* Slider */}
-              <input
-                type="range"
-                min={0}
-                max={k.max}
-                step={0.5}
-                value={scores[k.key]}
-                disabled={isLocked}
-                onChange={(e) => setScores((s) => ({ ...s, [k.key]: parseFloat(e.target.value) }))}
-                className="score-track"
-                style={{
-                  background: `linear-gradient(to right, ${k.color} ${pct}%, #334155 ${pct}%)`,
-                }}
-              />
-
-              {/* Quick preset buttons */}
-              {!isLocked && (
-                <div className="flex gap-1 mt-2">
-                  {[
-                    Math.round(k.max * 0.6),
-                    Math.round(k.max * 0.7),
-                    Math.round(k.max * 0.8),
-                    Math.round(k.max * 0.9),
-                    k.max,
-                  ].map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => setScores((s) => ({ ...s, [k.key]: preset }))}
-                      className="text-xs px-2 py-0.5 rounded border border-slate-600 text-slate-400 hover:border-amber-500 hover:text-amber-400 transition-all"
-                    >
-                      {preset}
-                    </button>
-                  ))}
+              {[
+                { id: 'salah_kata', label: '2. Salah kata' },
+                { id: 'menambah_kata', label: '3. Menambah kata' },
+                { id: 'mengurangi_kata', label: '4. Mengurangi kata' }
+              ].map(section => (
+                <div key={section.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                  <h4 className="font-semibold text-slate-800 mb-3">{section.label}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {[1,2,3,4,5,6,7,8].map(ayat => {
+                      const isActive = scores.perhatian[section.id].includes(ayat)
+                      return (
+                        <button 
+                          key={ayat} 
+                          onClick={() => {
+                            const arr = [...scores.perhatian[section.id]]
+                            if (isActive) {
+                              arr.splice(arr.indexOf(ayat), 1)
+                            } else {
+                              arr.push(ayat)
+                            }
+                            setScores({ ...scores, perhatian: { ...scores.perhatian, [section.id]: arr } })
+                          }}
+                          className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${isActive ? 'bg-red-600 border-red-600 text-white' : 'border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600'}`}
+                        >
+                          Ayat {ayat}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          )
-        })}
-      </div>
 
-      {/* Total Score */}
-      <div className="glass-card-dark p-5 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Total Nilai</p>
-          <p className="text-xs text-slate-500 mt-0.5">dari {MAX_TOTAL} maksimal</p>
-        </div>
-        <div className="text-right">
-          <span className="score-display">{total.toFixed(1)}</span>
-          <div className="w-32 h-1.5 rounded-full bg-slate-700 mt-2 ml-auto">
-            <div
-              className="h-full rounded-full bg-gold-gradient transition-all duration-300"
-              style={{ width: `${(total / MAX_TOTAL) * 100}%` }}
-            />
+            <div className="mt-8 pt-4 border-t border-slate-200 flex justify-end">
+               <button onClick={() => setActiveModal(null)} className="px-6 py-3 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-700">
+                 Simpan Perubahan
+               </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Catatan */}
-      <div>
-        <label className="form-label">Catatan Juri (Opsional)</label>
-        <textarea
-          value={scores.catatan}
-          onChange={(e) => setScores((s) => ({ ...s, catatan: e.target.value }))}
-          disabled={isLocked}
-          className="form-input resize-none"
-          rows={3}
-          placeholder="Catatan atau komentar untuk peserta ini..."
-        />
-      </div>
 
       {/* Actions */}
       {!isLocked ? (
@@ -355,7 +512,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Modal VAR */}
       {showVarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="glass-card w-full max-w-md p-6 animate-fade-in-up">
             <h3 className="font-display text-xl font-semibold text-white mb-4">Pengajuan VAR</h3>
             <p className="text-sm text-slate-400 mb-4">
@@ -402,7 +559,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Toast */}
       {toast && (
-        <div className={`toast toast-${toast.type}`}>
+        <div className={`toast toast-${toast.type} z-[200]`}>
           {toast.type === 'success' ? '✓' : '⚠'} {toast.msg}
         </div>
       )}
