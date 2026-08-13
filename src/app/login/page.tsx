@@ -34,11 +34,18 @@ export default function LoginPage() {
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_active')
         .eq('id', user.id)
         .single()
 
       const profile = profileData as Profile | null
+      
+      if (profile && profile.is_active === false) {
+        await supabase.auth.signOut()
+        setError('Akun Anda belum divalidasi admin. Silakan hubungi Panitia atau Admin.')
+        return
+      }
+
       if (profile?.role === 'superadmin') router.push('/superadmin')
       else if (profile?.role === 'ip') router.push('/admin')
       else if (profile?.role === 'op_regis') router.push('/op-regis')
@@ -69,21 +76,14 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo / Brand */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-700 to-amber-500 mb-5 shadow-[0_0_40px_rgba(201,168,76,0.3)]">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              {/* Stylized cross + book */}
-              <rect x="17" y="4" width="6" height="32" rx="2" fill="white" opacity="0.9"/>
-              <rect x="8" y="13" width="24" height="6" rx="2" fill="white" opacity="0.9"/>
-            </svg>
+          <div className="relative mx-auto w-24 h-24 mb-4 drop-shadow-[0_0_30px_rgba(201,168,76,0.3)]">
+            <img src="/Simbol_GMIM_free.png" alt="GMIM Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="font-display text-4xl font-bold text-gold-gradient mb-1">
-            BUMOTIK
+            GMIM
           </h1>
           <p className="text-sm text-slate-400 font-medium tracking-wide">
-            Benang Ungu Mazmur Oikumene Tahunan
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            Sistem Penjurian Baca Mazmur GMIM
+            Sistem Penjurian Baca Mazmur Digital
           </p>
         </div>
 
@@ -155,8 +155,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-slate-500 mt-6">
-            Untuk bantuan login, hubungi Inspektur Pertandingan
+          <p className="text-center text-sm text-slate-500 mt-6">
+            Belum punya akun? <a href="/register" className="text-amber-500 hover:text-amber-400 underline underline-offset-4">Daftar sekarang</a>
+            <br/><br/>
+            Untuk bantuan login, hubungi panitia atau admin
           </p>
         </div>
 
