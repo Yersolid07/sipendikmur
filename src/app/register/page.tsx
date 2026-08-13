@@ -128,26 +128,10 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <label className="form-label">Peran yang Diminta</label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="form-input"
-              >
-                <option value="juri">Juri</option>
-                <option value="op_sesi">Operator Sesi</option>
-                <option value="op_regis">Operator Registrasi</option>
-              </select>
-              <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-light)' }}>
-                Peran final akan dikonfirmasi oleh admin
-              </p>
-            </div>
-
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-primary w-full py-3 mt-2"
+              className="btn-primary w-full py-3 mt-4"
               style={{ fontSize: '0.95rem' }}
             >
               {isSubmitting ? 'Mendaftarkan...' : 'Daftar Sekarang'}
