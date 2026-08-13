@@ -12,7 +12,6 @@ interface Props {
 export default function Navbar({ profile }: Props) {
   const [showMenu, setShowMenu] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
-  const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
@@ -45,7 +44,6 @@ export default function Navbar({ profile }: Props) {
       setPasswordError('Gagal mengubah password: ' + error.message)
     } else {
       setPasswordSuccess('Password berhasil diubah! ✓')
-      setOldPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setTimeout(() => {
@@ -61,7 +59,7 @@ export default function Navbar({ profile }: Props) {
     op_sesi: 'Operator Sesi',
     ip: 'Inspektur Pertandingan',
     juri: 'Juri',
-  }[profile.role]
+  }[profile.role] ?? profile.role
 
   const roleBadgeClass = {
     superadmin: 'badge-error',
@@ -69,66 +67,76 @@ export default function Navbar({ profile }: Props) {
     op_sesi: 'badge-success',
     ip: 'badge-warning',
     juri: 'badge-gold',
-  }[profile.role]
+  }[profile.role] ?? 'badge-gold'
 
   return (
     <>
       <nav className="navbar flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-700 to-amber-500 flex items-center justify-center shadow-[0_0_16px_rgba(201,168,76,0.3)]">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <rect x="7.5" y="1" width="3" height="16" rx="1" fill="white" opacity="0.9"/>
-              <rect x="3" y="6" width="12" height="3" rx="1" fill="white" opacity="0.9"/>
-            </svg>
-          </div>
+          <img src="/Simbol_GMIM_free.png" alt="GMIM" className="w-9 h-9 object-contain" />
           <div>
-            <span className="font-display font-bold text-lg text-gold-gradient">GMIM</span>
-            <span className="hidden sm:inline text-xs text-slate-500 ml-2">Penjurian Baca Mazmur</span>
+            <span className="font-display font-semibold text-lg" style={{ color: 'var(--color-text)' }}>
+              Penjurian Baca Mazmur
+            </span>
+            <span className="hidden sm:inline text-xs ml-2" style={{ color: 'var(--color-text-muted)' }}>GMIM</span>
           </div>
         </div>
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2">
+          {/* Role + name (desktop) */}
+          <div className="hidden sm:flex items-center gap-2.5">
             <span className={`badge ${roleBadgeClass}`}>{roleLabel}</span>
-            <span className="text-sm text-white font-medium">{profile.nama}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{profile.nama}</span>
           </div>
 
-          {/* Menu button */}
+          {/* Dots menu */}
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="w-9 h-9 rounded-lg border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-amber-500 transition-all"
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+              style={{ border: '1px solid var(--color-border-dark)', color: 'var(--color-text-muted)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="8" r="1" fill="currentColor"/>
-                <circle cx="12" cy="12" r="1" fill="currentColor"/>
-                <circle cx="12" cy="16" r="1" fill="currentColor"/>
+              <svg width="4" height="16" viewBox="0 0 4 16" fill="currentColor">
+                <circle cx="2" cy="2" r="1.5"/>
+                <circle cx="2" cy="8" r="1.5"/>
+                <circle cx="2" cy="14" r="1.5"/>
               </svg>
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-11 w-48 glass-card-dark border-slate-700 shadow-2xl z-50 overflow-hidden">
-                <div className="p-3 border-b border-slate-700 sm:hidden">
-                  <p className="text-sm font-semibold text-white">{profile.nama}</p>
-                  <p className="text-xs text-slate-400">{roleLabel}</p>
+              <div
+                className="absolute right-0 top-11 w-52 z-50 rounded-xl shadow-xl overflow-hidden"
+                style={{ background: 'white', border: '1px solid var(--color-border)' }}
+              >
+                {/* Mobile: user info */}
+                <div className="sm:hidden px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>{profile.nama}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{roleLabel}</p>
                 </div>
+
                 <button
                   onClick={() => { setShowPasswordModal(true); setShowMenu(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 flex items-center gap-2 transition-colors"
+                  className="w-full text-left px-4 py-3 text-sm flex items-center gap-2.5 transition-colors hover:bg-[var(--color-cream-2)]"
+                  style={{ color: 'var(--color-text)' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                   Ganti Password
                 </button>
+
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors"
+                  className="w-full text-left px-4 py-3 text-sm flex items-center gap-2.5 transition-colors hover:bg-red-50"
+                  style={{ color: '#b91c1c', borderTop: '1px solid var(--color-border)' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
                   Keluar
                 </button>
@@ -140,17 +148,30 @@ export default function Navbar({ profile }: Props) {
 
       {/* Password Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md p-6 animate-fade-in-up">
-            <h3 className="font-display text-xl font-semibold text-white mb-4">Ganti Password</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(44,26,14,0.45)', backdropFilter: 'blur(4px)' }}
+        >
+          <div
+            className="w-full max-w-md p-6 rounded-2xl animate-fade-in-up shadow-2xl"
+            style={{ background: 'white', border: '1px solid var(--color-border)' }}
+          >
+            <h3 className="font-display text-xl font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
+              Ganti Password
+            </h3>
+            <p className="text-sm mb-5" style={{ color: 'var(--color-text-muted)' }}>
+              Masukkan password baru Anda (min. 8 karakter).
+            </p>
 
             {passwordError && (
-              <div className="mb-3 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+              <div className="mb-4 p-3 rounded-lg text-sm"
+                style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#b91c1c' }}>
                 {passwordError}
               </div>
             )}
             {passwordSuccess && (
-              <div className="mb-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-300 text-sm">
+              <div className="mb-4 p-3 rounded-lg text-sm"
+                style={{ background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.25)', color: '#15803d' }}>
                 {passwordSuccess}
               </div>
             )}
@@ -178,7 +199,7 @@ export default function Navbar({ profile }: Props) {
                   required
                 />
               </div>
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowPasswordModal(false)}
@@ -195,7 +216,7 @@ export default function Navbar({ profile }: Props) {
         </div>
       )}
 
-      {/* Overlay close */}
+      {/* Click-outside close */}
       {showMenu && (
         <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
       )}

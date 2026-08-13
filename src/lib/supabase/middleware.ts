@@ -36,8 +36,14 @@ export async function updateSession(request: NextRequest) {
   // Do not protect /live, it's public (for multimedia)
   if (isLiveRoute) return supabaseResponse
 
-  // Redirect unauthenticated users to login
-  if (!user && !url.pathname.startsWith('/login')) {
+  // Public routes — accessible without login
+  const publicRoutes = ['/', '/login', '/register', '/live']
+  const isPublic = publicRoutes.some(r =>
+    r === '/' ? url.pathname === '/' : url.pathname.startsWith(r)
+  )
+  
+  // Redirect unauthenticated users to login for protected routes
+  if (!user && !isPublic) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }

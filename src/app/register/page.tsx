@@ -30,8 +30,7 @@ export default function RegisterPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Gagal mendaftar')
 
-      setStatus({ type: 'success', msg: 'Berhasil mendaftar! Silakan tunggu admin memvalidasi dan mengaktifkan akun Anda.' })
-      // Clear form on success
+      setStatus({ type: 'success', msg: 'Pendaftaran berhasil! Akun Anda masih menunggu aktivasi dari Admin. Silakan hubungi panitia untuk informasi lebih lanjut.' })
       setFormData({ nama: '', email: '', password: '', role: 'juri' })
     } catch (err: any) {
       setStatus({ type: 'error', msg: err.message })
@@ -41,104 +40,126 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative bg-[var(--color-surface)] py-12">
-      {/* Background - Removed dark gradients */}
-      <div className="absolute inset-0 bg-[var(--color-surface)]" />
-      {/* Removed the decorative cross / mazmur ornament */}
-
-      <div className="relative z-10 w-full max-w-md px-6">
-        {/* Logo / Brand */}
-        <div className="text-center mb-8">
-          <div className="relative mx-auto w-20 h-20 mb-4 drop-shadow-[0_0_30px_rgba(201,168,76,0.3)]">
-            <Image 
-              src="/Simbol_GMIM_free.png" 
-              alt="GMIM Logo" 
-              fill
-              className="object-contain" 
-            />
-          </div>
-          <h1 className="font-display text-3xl font-bold text-slate-800 mb-1">
-            Pendaftaran Akun
-          </h1>
-          <p className="text-sm text-slate-500 font-medium tracking-wide">
-            Sistem Penjurian Baca Mazmur GMIM
-          </p>
+    <div className="min-h-screen flex" style={{ backgroundColor: 'var(--color-cream)' }}>
+      {/* Left panel — decorative */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
+        style={{ background: 'linear-gradient(160deg, var(--color-cream-2) 0%, var(--color-cream-3) 100%)', borderRight: '1px solid var(--color-border)' }}>
+        <Link href="/" className="flex items-center gap-3">
+          <img src="/Simbol_GMIM_free.png" alt="GMIM" className="w-10 h-10 object-contain" />
+          <span className="font-display font-semibold text-xl" style={{ color: 'var(--color-text)' }}>
+            Penjurian Baca Mazmur
+          </span>
+        </Link>
+        <div>
+          <blockquote className="font-display text-3xl font-medium leading-snug mb-6" style={{ color: 'var(--color-text)' }}>
+            &ldquo;Pujilah TUHAN dengan kecapi, bermazmurlah bagi-Nya dengan gambus sepuluh tali!&rdquo;
+          </blockquote>
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>— Mazmur 33:2</p>
         </div>
+        <p className="text-xs" style={{ color: 'var(--color-text-light)' }}>
+          &copy; {new Date().getFullYear()} Gereja Masehi Injili di Minahasa
+        </p>
+      </div>
 
-        {/* Register Card */}
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 animate-fade-in-up">
+      {/* Right panel — form */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {/* Mobile logo */}
+        <Link href="/" className="lg:hidden flex items-center gap-3 mb-10">
+          <img src="/Simbol_GMIM_free.png" alt="GMIM" className="w-10 h-10 object-contain" />
+          <span className="font-display font-semibold text-xl" style={{ color: 'var(--color-text)' }}>
+            Penjurian Baca Mazmur
+          </span>
+        </Link>
+
+        <div className="w-full max-w-sm animate-fade-in-up">
+          <h2 className="font-display text-3xl font-semibold mb-1" style={{ color: 'var(--color-text)' }}>
+            Daftar Akun
+          </h2>
+          <p className="text-sm mb-8" style={{ color: 'var(--color-text-muted)' }}>
+            Isi data Anda. Akun akan aktif setelah divalidasi admin.
+          </p>
+
           {status && (
-            <div className={`mb-6 p-4 rounded-xl border flex items-start gap-3 ${status.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
-              <div className="mt-0.5">
-                {status.type === 'success' ? '✅' : '⚠️'}
-              </div>
-              <div className="text-sm leading-relaxed">{status.msg}</div>
+            <div className="mb-6 p-4 rounded-xl text-sm"
+              style={{
+                background: status.type === 'success' ? 'rgba(22,163,74,0.07)' : 'rgba(220,38,38,0.07)',
+                border: `1px solid ${status.type === 'success' ? 'rgba(22,163,74,0.25)' : 'rgba(220,38,38,0.2)'}`,
+                color: status.type === 'success' ? '#15803d' : '#b91c1c'
+              }}>
+              {status.msg}
             </div>
           )}
 
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="form-label text-slate-700">Nama Lengkap</label>
+              <label className="form-label">Nama Lengkap</label>
               <input
                 type="text"
                 required
                 value={formData.nama}
                 onChange={(e) => setFormData({...formData, nama: e.target.value})}
-                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
+                className="form-input"
                 placeholder="Misal: Pnt. John Doe"
               />
             </div>
 
             <div>
-              <label className="form-label text-slate-700">Email</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
+                className="form-input"
                 placeholder="nama@email.com"
               />
             </div>
 
             <div>
-              <label className="form-label text-slate-700">Password</label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
                 required
                 minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
+                className="form-input"
                 placeholder="Minimal 6 karakter"
               />
             </div>
 
             <div>
-              <label className="form-label text-slate-700">Peran (Role)</label>
+              <label className="form-label">Peran yang Diminta</label>
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="form-input bg-white text-slate-800 border-slate-300 focus:border-amber-500"
+                className="form-input"
               >
                 <option value="juri">Juri</option>
                 <option value="op_sesi">Operator Sesi</option>
                 <option value="op_regis">Operator Registrasi</option>
               </select>
+              <p className="text-xs mt-1.5" style={{ color: 'var(--color-text-light)' }}>
+                Peran final akan dikonfirmasi oleh admin
+              </p>
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-[#7f1d1d] hover:bg-[#6c1919] text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="btn-primary w-full py-3 mt-2"
+              style={{ fontSize: '0.95rem' }}
             >
-              {isSubmitting ? 'Mendaftar...' : 'Daftar Sekarang'}
+              {isSubmitting ? 'Mendaftarkan...' : 'Daftar Sekarang'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Sudah punya akun? <Link href="/login" className="text-amber-500 hover:text-amber-400 underline underline-offset-4">Masuk ke Sistem</Link>
-          </p>
+          <div className="mt-6 pt-6 text-center text-sm" style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+            Sudah punya akun?{' '}
+            <Link href="/login" className="font-medium" style={{ color: 'var(--color-amber)' }}>
+              Masuk di sini
+            </Link>
+          </div>
         </div>
       </div>
     </div>
