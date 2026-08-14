@@ -32,6 +32,22 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
+  useEffect(() => {
+    loadData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEvent])
+
+  useEffect(() => {
+    if (showMazmurModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [showMazmurModal])
+
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3000)

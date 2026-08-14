@@ -23,7 +23,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
   const [kehadiranFilter, setKehadiranFilter] = useState('all')
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   
-  const [kategoriList, setKategoriList] = useState<{ id: string; nama: string }[]>([])
+  const [kategoriList, setKategoriList] = useState<{ id: string; nama: string; bahan_mazmur?: number[] | null }[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [editPeserta, setEditPeserta] = useState<RekapPenilaian | null>(null)
@@ -80,6 +80,17 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
       supabase.removeChannel(channel)
     }
   }, [activeEvent])
+
+  useEffect(() => {
+    if (showAddModal || showImportModal || editPeserta) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [showAddModal, showImportModal, editPeserta])
 
   async function toggleCheckIn(pesertaId: string, currentStatus: boolean) {
     const { error } = await supabase.from('peserta').update({ is_checked_in: !currentStatus } as any).eq('id', pesertaId)
@@ -465,6 +476,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                 asal_jemaat: editPeserta.asal_jemaat,
                 nomor_peserta: editPeserta.nomor_peserta || null,
                 nomor_undian: editPeserta.nomor_undian ? parseInt(editPeserta.nomor_undian as any) : null,
+                mazmur_bacaan: editPeserta.mazmur_bacaan || null,
               }
               const { error } = await supabase.from('peserta').update(payload as any).eq('id', editPeserta.peserta_id)
               setIsSaving(false)
@@ -493,6 +505,34 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                   <label className="form-label">Nomor Undian</label>
                   <input type="number" value={editPeserta.nomor_undian || ''} onChange={e => setEditPeserta({...editPeserta, nomor_undian: Number(e.target.value)})} className="form-input" />
                 </div>
+              </div>
+              <div>
+                <label className="form-label">Mazmur Bacaan</label>
+                {(() => {
+                  const allowedMazmur = kategoriList.find(k => k.id === editPeserta.kategori_id)?.bahan_mazmur || []
+                  if (allowedMazmur.length > 0) {
+                    return (
+                      <select 
+                        value={editPeserta.mazmur_bacaan || ''} 
+                        onChange={e => setEditPeserta({...editPeserta, mazmur_bacaan: e.target.value})} 
+                        className="form-input"
+                      >
+                        <option value="">-- Pilih Mazmur --</option>
+                        {allowedMazmur.map(m => (
+                          <option key={m} value={`Mazmur ${m}`}>Mazmur {m}</option>
+                        ))}
+                      </select>
+                    )
+                  }
+                  return (
+                    <input 
+                      value={editPeserta.mazmur_bacaan || ''} 
+                      onChange={e => setEditPeserta({...editPeserta, mazmur_bacaan: e.target.value})} 
+                      className="form-input" 
+                      placeholder="Contoh: Mazmur 23:1-6"
+                    />
+                  )
+                })()}
               </div>
               <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
                 <button type="button" onClick={() => setEditPeserta(null)} className="btn-secondary">Batal</button>

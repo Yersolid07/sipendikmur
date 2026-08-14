@@ -18,15 +18,15 @@ interface Props {
 }
 
 const GRADES = [
-  { label: 'Grade 1', val: 1 },
-  { label: 'Grade 1.5', val: 1.5 },
-  { label: 'Grade 2', val: 2 },
-  { label: 'Grade 2.5', val: 2.5 },
-  { label: 'Grade 3', val: 3 },
-  { label: 'Grade 3.5', val: 3.5 },
-  { label: 'Grade 4', val: 4 },
-  { label: 'Grade 4.5', val: 4.5 },
-  { label: 'Grade 5', val: 5 },
+  { label: 'Grade 1', val: 1, desc: 'Sangat Kurang' },
+  { label: 'Grade 1.5', val: 1.5, desc: 'Sangat Kurang (+)' },
+  { label: 'Grade 2', val: 2, desc: 'Kurang' },
+  { label: 'Grade 2.5', val: 2.5, desc: 'Kurang (+)' },
+  { label: 'Grade 3', val: 3, desc: 'Cukup' },
+  { label: 'Grade 3.5', val: 3.5, desc: 'Cukup (+)' },
+  { label: 'Grade 4', val: 4, desc: 'Baik' },
+  { label: 'Grade 4.5', val: 4.5, desc: 'Baik (+)' },
+  { label: 'Grade 5', val: 5, desc: 'Sangat Baik' },
 ]
 
 const CATATAN_ASPEK = [
@@ -52,9 +52,6 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     catatan: '',
     perhatian: {
       clear_text: true,
-      salah_kata: [] as number[],
-      menambah_kata: [] as number[],
-      mengurangi_kata: [] as number[],
     },
     catatan_aspek: {} as Record<string, number>
   })
@@ -136,7 +133,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           penampilan: p.penampilan ?? 0,
           catatan: p.catatan ?? '',
           catatan_aspek: (p as any).catatan_aspek ?? {},
-          perhatian: (p as any).perhatian ?? { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] }
+          perhatian: (p as any).perhatian ?? { clear_text: true }
         })
       } else {
         // Reset for new peserta
@@ -148,7 +145,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         if (local) {
           try { localScores = JSON.parse(local) } catch(e) {}
         }
-        setScores(localScores || { kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '', catatan_aspek: {}, perhatian: { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] } })
+        setScores(localScores || { kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '', catatan_aspek: {}, perhatian: { clear_text: true } })
       }
       setIsLoading(false)
     }
@@ -164,6 +161,18 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     localStorage.setItem(storageKey, JSON.stringify(scores))
   }, [scores, isLoading, isSubmitted, sesi?.id, profile.id])
 
+  // Body Scroll Lock for Modals
+  useEffect(() => {
+    if (activeModal || showVarModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [activeModal, showVarModal])
+
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3500)
@@ -174,10 +183,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
     const p = scores.perhatian
     let potongan = 0
-    if (p) {
-      if (!p.clear_text) potongan += 5
-      potongan += p.salah_kata.length + p.menambah_kata.length + p.mengurangi_kata.length
-    }
+    if (p && !p.clear_text) potongan += 5
 
     const payload = {
       sesi_id: sesi.id,
@@ -226,10 +232,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     setIsSubmitting(true)
     
     let potongan = 0
-    if (p) {
-      if (!p.clear_text) potongan += 5
-      potongan += p.salah_kata.length + p.menambah_kata.length + p.mengurangi_kata.length
-    }
+    if (p && !p.clear_text) potongan += 5
 
     const payload = {
       sesi_id: sesi.id,
@@ -347,9 +350,12 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
                 ? 'bg-gradient-to-br from-amber-600 to-amber-700 border-amber-400 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]' 
                 : 'bg-[var(--color-cream-1)] border-[var(--color-border)] hover:bg-[var(--color-cream-2)] hover:border-[var(--color-amber-dark)] text-[var(--color-text)]'}`}
           >
-            <span className="relative z-10">{k.label}</span>
+            <span className="block relative z-10 text-2xl mb-1">{k.label}</span>
+            <span className={`block relative z-10 text-sm font-normal mb-2 ${scores[k.key] > 0 ? 'text-amber-100' : 'text-slate-500'}`}>
+              {k.description}
+            </span>
             {scores[k.key] > 0 && (
-              <span className="block text-sm font-normal opacity-90 mt-2 relative z-10">
+              <span className="inline-block text-sm font-bold relative z-10 text-white bg-black/20 rounded-full px-4 py-1.5">
                 Grade: {scores[k.key]}
               </span>
             )}
@@ -420,6 +426,9 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
                     <div className={`font-bold ${scores[activeModal] === g.val ? 'text-amber-900' : 'text-slate-700'}`}>
                       {g.label}
                     </div>
+                    <div className={`text-xs mt-0.5 font-medium ${scores[activeModal] === g.val ? 'text-amber-700' : 'text-slate-500'}`}>
+                      {g.desc}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -461,39 +470,10 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
                     Tidak
                   </button>
                 </div>
+                <p className="text-sm text-slate-500 mt-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  Untuk kesalahan lebih rinci seperti salah kata, menambah kata, atau mengurangi kata, mohon tuliskan langsung di bagian <strong>Catatan Umum</strong>.
+                </p>
               </div>
-
-              {[
-                { id: 'salah_kata', label: '2. Salah kata' },
-                { id: 'menambah_kata', label: '3. Menambah kata' },
-                { id: 'mengurangi_kata', label: '4. Mengurangi kata' }
-              ].map(section => (
-                <div key={section.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                  <h4 className="font-semibold text-slate-800 mb-3">{section.label}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {[1,2,3,4,5,6,7,8].map(ayat => {
-                      const isActive = scores.perhatian[section.id].includes(ayat)
-                      return (
-                        <button 
-                          key={ayat} 
-                          onClick={() => {
-                            const arr = [...scores.perhatian[section.id]]
-                            if (isActive) {
-                              arr.splice(arr.indexOf(ayat), 1)
-                            } else {
-                              arr.push(ayat)
-                            }
-                            setScores({ ...scores, perhatian: { ...scores.perhatian, [section.id]: arr } })
-                          }}
-                          className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${isActive ? 'bg-red-600 border-red-600 text-white' : 'border-slate-200 text-slate-600 hover:border-red-400 hover:text-red-600'}`}
-                        >
-                          Ayat {ayat}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
             </div>
 
             <div className="mt-8 pt-4 border-t border-slate-200 flex justify-end">

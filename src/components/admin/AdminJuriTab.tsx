@@ -18,6 +18,17 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
   const [newPassword, setNewPassword] = useState('')
   const supabase = createClient()
 
+  useEffect(() => {
+    if (showCreateForm || resetPasswordId) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [showCreateForm, resetPasswordId])
+
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3500)

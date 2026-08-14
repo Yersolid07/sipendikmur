@@ -37,6 +37,13 @@ export default function DetailPesertaModal({
   const supabase = createClient()
 
   useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [])
+
+  useEffect(() => {
     async function loadDetail() {
       setIsLoading(true)
       

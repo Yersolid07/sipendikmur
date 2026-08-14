@@ -96,6 +96,18 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
     }
   }, [pollSesi, supabase])
 
+  // Body Scroll Lock for VAR Modal
+  useEffect(() => {
+    if (pendingVar && !hasApprovedVar) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [pendingVar, hasApprovedVar])
+
   async function handleApproveVar() {
     if (!pendingVar) return
     const { data: v } = await supabase.from('var_requests').select('*').eq('id', pendingVar.id).single()
