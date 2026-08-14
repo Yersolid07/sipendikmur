@@ -18,17 +18,6 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
   const [newPassword, setNewPassword] = useState('')
   const supabase = createClient()
 
-  useEffect(() => {
-    if (showCreateForm || resetPasswordId) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [showCreateForm, resetPasswordId])
-
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3500)
@@ -87,28 +76,30 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
 
       {/* Create form */}
       {showCreateForm && (
-        <div className="panel">
-          <h4 className="font-semibold text-[var(--color-text)] mb-4">Buat Akun Juri Baru</h4>
-          <form onSubmit={handleCreateJuri} className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">Nama Lengkap *</label>
-              <input value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} className="form-input" required placeholder="Nama juri" />
-            </div>
-            <div>
-              <label className="form-label">Email *</label>
-              <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className="form-input" required placeholder="email@domain.com" />
-            </div>
-            <div>
-              <label className="form-label">Password Awal *</label>
-              <input type="text" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} className="form-input" required placeholder="Min. 8 karakter" />
-            </div>
-            <div className="flex items-end gap-3">
-              <button type="button" onClick={() => setShowCreateForm(false)} className="btn-secondary flex-1">Batal</button>
-              <button type="submit" disabled={isCreating} className="btn-primary flex-1">
-                {isCreating ? <><span className="spinner" /> Membuat...</> : '+ Buat Akun'}
-              </button>
-            </div>
-          </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
+          <div className="panel w-full max-w-lg">
+            <h4 className="font-semibold text-[var(--color-text)] mb-4">Buat Akun Juri Baru</h4>
+            <form onSubmit={handleCreateJuri} className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Nama Lengkap *</label>
+                <input value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} className="form-input" required placeholder="Nama juri" />
+              </div>
+              <div>
+                <label className="form-label">Email *</label>
+                <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className="form-input" required placeholder="email@domain.com" />
+              </div>
+              <div>
+                <label className="form-label">Password Awal *</label>
+                <input type="text" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} className="form-input" required placeholder="Min. 8 karakter" />
+              </div>
+              <div className="flex items-end gap-3">
+                <button type="button" onClick={() => setShowCreateForm(false)} className="btn-secondary flex-1">Batal</button>
+                <button type="submit" disabled={isCreating} className="btn-primary flex-1">
+                  {isCreating ? <><span className="spinner" /> Membuat...</> : '+ Buat Akun'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -158,7 +149,7 @@ export default function AdminJuriTab({ juriList, activeEvent }: Props) {
 
       {/* Reset password modal */}
       {resetPasswordId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="panel w-full max-w-sm">
             <h4 className="font-display text-xl font-semibold text-[var(--color-text)] mb-4">Reset Password Juri</h4>
             <div className="space-y-4">

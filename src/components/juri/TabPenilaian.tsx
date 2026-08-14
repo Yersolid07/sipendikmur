@@ -161,18 +161,6 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     localStorage.setItem(storageKey, JSON.stringify(scores))
   }, [scores, isLoading, isSubmitted, sesi?.id, profile.id])
 
-  // Body Scroll Lock for Modals
-  useEffect(() => {
-    if (activeModal || showVarModal) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [activeModal, showVarModal])
-
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3500)
@@ -389,7 +377,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Grade Selection Modal */}
       {activeModal && activeModal !== 'perhatian' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-slate-50 text-slate-900 w-full max-w-lg rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-display text-2xl font-bold text-amber-900 capitalize">
@@ -439,7 +427,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Perhatian Modal */}
       {activeModal === 'perhatian' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-slate-50 text-slate-900 w-full max-w-2xl rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-display text-2xl font-bold text-red-900">Perhatian</h3>
@@ -487,7 +475,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Catatan Juri Modal */}
       {activeModal === 'catatan_juri' && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-slate-50 text-slate-900 w-full max-w-3xl rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-display text-2xl font-bold text-amber-900">Catatan Juri</h3>
@@ -604,7 +592,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
 
       {/* Modal VAR */}
       {showVarModal && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="panel w-full max-w-md p-6 animate-fade-in-up">
             <h3 className="font-display text-xl font-semibold text-[var(--color-text)] mb-4">Pengajuan VAR</h3>
             <p className="text-sm text-[var(--color-text-muted)] mb-4">

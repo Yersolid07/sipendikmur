@@ -94,19 +94,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
       clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
-  }, [pollSesi, supabase])
-
-  // Body Scroll Lock for VAR Modal
-  useEffect(() => {
-    if (pendingVar && !hasApprovedVar) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [pendingVar, hasApprovedVar])
+  }, [profile.id, pendingVar])
 
   async function handleApproveVar() {
     if (!pendingVar) return
@@ -176,32 +164,30 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
 
       {/* Active Performer Banner */}
       {sesi?.peserta ? (
-        <div className="performer-banner animate-fade-in-up">
+        <div className="panel p-6 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)] animate-fade-in-up">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-white/90 uppercase tracking-widest mb-1 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" />
+              <p className="text-xs font-semibold text-emerald-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
                 Sedang Tampil
               </p>
-              <h2 className="font-display text-2xl font-bold text-white">
+              <h2 className="font-display text-3xl font-bold text-[var(--color-text)]">
                 {sesi.peserta.nama}
               </h2>
-              <div className="flex items-center gap-3 mt-1.5">
-                <span className="text-sm text-white/80">{sesi.peserta.asal_jemaat}</span>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="text-[var(--color-text-muted)] font-medium">{sesi.peserta.asal_jemaat}</span>
                 {sesi.peserta.nomor_undian && (
-                  <span className="badge badge-gold text-xs">No. {sesi.peserta.nomor_undian}</span>
+                  <span className="badge badge-gold px-3 py-1 shadow-sm font-bold">No. {sesi.peserta.nomor_undian}</span>
                 )}
                 {sesi.kategori && (
-                  <span className="badge badge-info text-xs px-2 py-0.5">{sesi.kategori.nama}</span>
+                  <span className="badge badge-info px-3 py-1 shadow-sm font-bold">{sesi.kategori.nama}</span>
                 )}
               </div>
             </div>
             {sesi.peserta.mazmur_bacaan && (
               <div className="text-right ml-4">
-                <p className="text-xs text-white/70 mb-1">Mazmur</p>
-                <p className="font-display text-lg font-semibold text-white">
-                  {sesi.peserta.mazmur_bacaan}
-                </p>
+                <p className="text-xs text-[var(--color-text-muted)] uppercase tracking-widest mb-1 font-semibold">Mazmur</p>
+                <p className="text-2xl font-display font-bold text-blue-700/90 drop-shadow-sm">{sesi.peserta.mazmur_bacaan}</p>
               </div>
             )}
           </div>
@@ -261,7 +247,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
 
       {/* VAR Request Popup */}
       {pendingVar && !hasApprovedVar && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl relative overflow-hidden animate-fade-in-up">
             <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
             <div className="text-red-500 mb-4 flex justify-center"><AlertTriangle className="w-16 h-16" /></div>

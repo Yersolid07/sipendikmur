@@ -37,17 +37,6 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeEvent])
 
-  useEffect(() => {
-    if (showMazmurModal) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [showMazmurModal])
-
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })
     setTimeout(() => setToast(null), 3000)
@@ -306,7 +295,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
 
       {/* Modal Mazmur */}
       {showMazmurModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-white text-slate-900 w-full max-w-4xl rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <div>

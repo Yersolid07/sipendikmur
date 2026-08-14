@@ -81,17 +81,6 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
     }
   }, [activeEvent])
 
-  useEffect(() => {
-    if (showAddModal || showImportModal || editPeserta) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'auto'
-    }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
-  }, [showAddModal, showImportModal, editPeserta])
-
   async function toggleCheckIn(pesertaId: string, currentStatus: boolean) {
     const { error } = await supabase.from('peserta').update({ is_checked_in: !currentStatus } as any).eq('id', pesertaId)
     if (error) showToast('error', 'Gagal update status check-in')
@@ -465,7 +454,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
       )}
 
       {editPeserta && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-white/30 backdrop-blur-md">
           <div className="bg-white text-slate-900 w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl animate-fade-in-up">
             <h3 className="font-display text-2xl font-bold text-[var(--color-text)] mb-4">Quick Edit Data</h3>
             <form onSubmit={async (e) => {
