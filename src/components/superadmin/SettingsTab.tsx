@@ -3,11 +3,16 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Setting } from '@/types/database'
+import dynamic from 'next/dynamic'
+import 'react-quill/dist/quill.snow.css'
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
 export default function SettingsTab() {
   const [settings, setSettings] = useState<Setting | null>(null)
   const [namaPenyelenggara, setNamaPenyelenggara] = useState('')
   const [logoUrl, setLogoUrl] = useState('')
+  const [informasiLomba, setInformasiLomba] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -26,6 +31,7 @@ export default function SettingsTab() {
       setSettings(data as Setting)
       setNamaPenyelenggara(data.nama_penyelenggara || '')
       setLogoUrl(data.logo_url || '')
+      setInformasiLomba(data.informasi_lomba || '')
     }
     setIsLoading(false)
   }
@@ -41,6 +47,7 @@ export default function SettingsTab() {
     const payload = {
       nama_penyelenggara: namaPenyelenggara,
       logo_url: logoUrl,
+      informasi_lomba: informasiLomba,
     }
 
     if (settings) {
@@ -97,6 +104,29 @@ export default function SettingsTab() {
               <img src={logoUrl} alt="Logo Preview" className="h-16 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
             </div>
           )}
+
+          <div className="pt-4 border-t border-[var(--color-border)]">
+            <h4 className="font-semibold text-[var(--color-text)] mb-3">Informasi Lomba</h4>
+            <p className="text-xs text-[var(--color-text-muted)] mb-4">
+              Isi syarat & ketentuan, deskripsi lomba, pedoman kategori, dll. Mendukung format tabel, list, dan link.
+            </p>
+            <div className="bg-white rounded-lg border border-[var(--color-border)] [&_.ql-editor]:min-h-[300px]">
+              <ReactQuill 
+                theme="snow" 
+                value={informasiLomba} 
+                onChange={setInformasiLomba} 
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                  ]
+                }}
+              />
+            </div>
+          </div>
 
           <div className="pt-4 border-t border-[var(--color-border)] flex justify-end">
             <button type="submit" disabled={isSaving} className="btn-primary px-8">

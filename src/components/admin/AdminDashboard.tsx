@@ -90,7 +90,7 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
       {/* Tab Content */}
       <div className="animate-fade-in-up">
         {activeTab === 'monitor' && (
-          <AdminMonitorTab activeEvent={activeEvent} juriList={juriList} />
+          <AdminMonitorTab activeEvent={activeEvent} juriList={juriList} profile={profile} />
         )}
         {activeTab === 'rekap' && (
           <AdminRekapTab activeEvent={activeEvent} />

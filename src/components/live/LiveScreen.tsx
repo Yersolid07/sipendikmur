@@ -89,7 +89,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
       <header className="p-8 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {settings?.logo_url ? (
-            <img src={settings.logo_url} alt="Logo" className="h-16" />
+            <img src={settings?.logo_url || '/Simbol_GMIM_free.png'} alt="Logo" className="h-16 object-contain" />
           ) : (
              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-700 to-amber-500 flex items-center justify-center shadow-[0_0_30px_rgba(201,168,76,0.3)]">
                 <svg width="32" height="32" viewBox="0 0 18 18" fill="none">

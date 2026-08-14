@@ -1,4 +1,4 @@
-Write-Host "🚀 Starting BUMOTIK GMIM Deployment Script..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Sistem Penjurian GMIM Deployment Script..." -ForegroundColor Cyan
 
 # 1. Supabase Initialization and Link
 Write-Host "🔗 Linking to Supabase Project..." -ForegroundColor Yellow

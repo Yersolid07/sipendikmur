@@ -8,7 +8,7 @@ const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const accounts = [
   { nama: 'Super Admin GMIM',      email: 'superadmin@gmim.id',        password: 'SuperAdmin2026!',  role: 'superadmin' },
   { nama: 'Salem J. Turangan',     email: 'jeremiaturangan@gmail.com',  password: 'Yersolid07_!',     role: 'ip'         },
-  { nama: 'Wenny Imon',            email: 'Imonwenny@gmail.com',        password: 'BUMOTIK 2026*',    role: 'juri'       },
+  { nama: 'Wenny Imon',            email: 'Imonwenny@gmail.com',        password: 'GMIM 2026*',    role: 'juri'       },
   { nama: 'Juri 2',               email: 'juri2@gmim.id',              password: 'Juri2026!',        role: 'juri'       },
   { nama: 'Juri 3',               email: 'juri3@gmim.id',              password: 'Juri2026!',        role: 'juri'       },
   { nama: 'Operator Sesi',        email: 'opsesi@gmim.id',             password: 'OpSesi2026!',      role: 'op_sesi'    },

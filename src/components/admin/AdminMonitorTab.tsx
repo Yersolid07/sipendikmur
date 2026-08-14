@@ -3,198 +3,229 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, Profile } from '@/types/database'
+import DetailPesertaModal from './DetailPesertaModal'
+import { Eye, Lock, Video, AlertTriangle } from 'lucide-react'
 
-interface PenilaianRow {
-  peserta_nama: string
-  peserta_id: string
-  juri_id: string
-  juri_nama: string
-  kekompakan: number | null
-  interpretasi: number | null
-  artikulasi: number | null
-  penghayatan: number | null
-  penampilan: number | null
-  total: number
-  is_submitted: boolean
+interface PesertaRow {
+  id: string
+  nomor_urut: number
+  nama: string
+  kategori_nama: string
+  mazmur_bacaan: string
+  status: 'menunggu' | 'dinilai' | 'selesai'
+  var_status?: 'pending' | 'approved' | 'rejected' | null
+  sesi_id?: string
+}
+
+interface Stats {
+  totalPeserta: number
+  sudahTampil: number
+  sedangTampil: number
+  belumTampil: number
+  sesiAktif: number
+  sesiSelesai: number
+  potensiVar: number
 }
 
 interface Props {
   activeEvent: Event | null
   juriList: Profile[]
+  profile: Profile
 }
 
-export default function AdminMonitorTab({ activeEvent, juriList }: Props) {
-  const [data, setData] = useState<PenilaianRow[]>([])
+export default function AdminMonitorTab({ activeEvent, juriList, profile }: Props) {
+  const [data, setData] = useState<PesertaRow[]>([])
+  const [stats, setStats] = useState<Stats>({
+    totalPeserta: 0, sudahTampil: 0, sedangTampil: 0, belumTampil: 0, sesiAktif: 0, sesiSelesai: 0, potensiVar: 0
+  })
   const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [selectedDetailPeserta, setSelectedDetailPeserta] = useState<string | null>(null)
   const supabase = createClient()
 
   const loadData = useCallback(async () => {
     if (!activeEvent) return
 
+    // Fetch stats
+    const [pesertaRes, sesiRes, varRes] = await Promise.all([
+      supabase.from('peserta').select('status, id').eq('event_id', activeEvent.id),
+      supabase.from('sesi').select('status, id').eq('event_id', activeEvent.id),
+      supabase.from('var_requests').select('status').eq('status', 'pending')
+    ])
+
+    const pData = pesertaRes.data || []
+    const sData = sesiRes.data || []
+    const vData = varRes.data || []
+
+    const sudahTampil = pData.filter(p => p.status === 'selesai').length
+    const sedangTampil = pData.filter(p => p.status === 'dinilai').length
+
+    setStats({
+      totalPeserta: pData.length,
+      sudahTampil,
+      sedangTampil,
+      belumTampil: pData.length - sudahTampil - sedangTampil,
+      sesiAktif: sData.filter(s => s.status === 'berjalan').length,
+      sesiSelesai: sData.filter(s => s.status === 'selesai').length,
+      potensiVar: vData.length
+    })
+
+    // Fetch Monitoring Table (only dinilai & selesai)
     const { data: rows } = await supabase
-      .from('penilaian')
+      .from('peserta')
       .select(`
-        *,
-        peserta:peserta_id(nama),
-        juri:juri_id(nama)
+        id, nomor_undian, nama, mazmur_bacaan, status,
+        kategori:kategori_id(nama),
+        sesi!sesi_peserta_aktif_id_fkey(id)
       `)
+      .eq('event_id', activeEvent.id)
+      .in('status', ['dinilai', 'selesai'])
       .order('updated_at', { ascending: false })
+      .limit(50)
 
     const mapped = (rows ?? []).map((r: any) => ({
-      peserta_nama: r.peserta?.nama ?? '-',
-      peserta_id: r.peserta_id,
-      juri_id: r.juri_id,
-      juri_nama: r.juri?.nama ?? '-',
-      kekompakan: r.kekompakan,
-      interpretasi: r.interpretasi,
-      artikulasi: r.artikulasi,
-      penghayatan: r.penghayatan,
-      penampilan: r.penampilan,
-      total: r.total ?? 0,
-      is_submitted: r.is_submitted,
+      id: r.id,
+      nomor_urut: r.nomor_undian || 0,
+      nama: r.nama,
+      kategori_nama: r.kategori?.nama || '-',
+      mazmur_bacaan: r.mazmur_bacaan || '-',
+      status: r.status,
+      sesi_id: r.sesi?.[0]?.id, // Taking the first matching session if any
     }))
 
     setData(mapped)
-    setLastUpdate(new Date())
     setIsLoading(false)
   }, [activeEvent, supabase])
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 3000)
-    return () => clearInterval(interval)
-  }, [loadData])
+    
+    // Use Supabase Realtime instead of polling
+    const channel = supabase.channel('admin_monitor')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sesi' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'var_requests' }, () => loadData())
+      .subscribe()
+      
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loadData, supabase])
 
-  if (!activeEvent) {
-    return (
-      <div className="panel text-center">
-        <p className="text-[var(--color-text-muted)]">Tidak ada event aktif untuk dimonitor.</p>
-      </div>
-    )
+  async function handleAkhiriPenampilan(pesertaId: string, sesiId?: string) {
+    if (!confirm('Akhiri & Finalkan penampilan peserta ini?')) return
+    if (sesiId) {
+      await supabase.from('sesi').update({ nilai_dikunci: true, status: 'selesai' } as any).eq('id', sesiId)
+    }
+    await supabase.from('peserta').update({ status: 'selesai' } as any).eq('id', pesertaId)
+    loadData()
   }
 
-  // Group by peserta
-  const byPeserta: Record<string, PenilaianRow[]> = {}
-  data.forEach((d) => {
-    if (!byPeserta[d.peserta_id]) byPeserta[d.peserta_id] = []
-    byPeserta[d.peserta_id].push(d)
-  })
+  async function handleAjukanVAR(pesertaId: string) {
+    const alasan = prompt('Alasan mengajukan VAR:')
+    if (!alasan) return
+    const { error } = await supabase.from('var_requests').insert({
+      peserta_id: pesertaId, requested_by: profile.id, requested_role: 'ip', alasan: alasan, status: 'pending'
+    } as any)
+    if (!error) alert('VAR berhasil diajukan.')
+  }
+
+  if (!activeEvent) return <div className="panel text-center">Tidak ada event aktif.</div>
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">
-          📊 Monitor Nilai Real-time
+    <div className="space-y-6 animate-fade-in-up">
+      {/* 7 Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {[
+          { label: 'Total Peserta', val: stats.totalPeserta },
+          { label: 'Sudah Tampil', val: stats.sudahTampil },
+          { label: 'Sedang Tampil', val: stats.sedangTampil },
+          { label: 'Belum Tampil', val: stats.belumTampil },
+          { label: 'Sesi Aktif', val: stats.sesiAktif },
+          { label: 'Sesi Selesai', val: stats.sesiSelesai },
+          { label: 'Potensi VAR', val: stats.potensiVar, isRed: true },
+        ].map((s, i) => (
+          <div key={i} className="panel p-4 flex flex-col justify-center items-start bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+            <span className={`text-sm font-semibold mb-1 ${s.isRed ? 'text-red-500' : 'text-slate-500'}`}>{s.label}</span>
+            <span className={`text-4xl font-display font-bold ${s.isRed ? 'text-red-600' : 'text-slate-800'}`}>{s.val}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="panel p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <h3 className="font-display text-xl font-bold text-slate-800 flex items-center gap-2 mb-1">
+           Monitoring Real-time Peserta
         </h3>
-        <span className="text-xs text-[var(--color-text-muted)]">
-          Update: {lastUpdate.toLocaleTimeString('id-ID')} · auto refresh 8s
-        </span>
-      </div>
-
-      {/* Juri Status */}
-      <div className="panel">
-        <p className="text-xs text-[var(--color-text-muted)] font-semibold uppercase tracking-wide mb-3">Status Juri</p>
-        <div className="flex flex-wrap gap-2">
-          {juriList.map((j) => {
-            const hasSubmitted = data.some((d) => d.juri_id === j.id && d.is_submitted)
-            const hasDraft = data.some((d) => d.juri_id === j.id && !d.is_submitted)
-            return (
-              <div
-                key={j.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm ${
-                  hasSubmitted
-                    ? 'bg-green-100 border-green-300 text-green-800'
-                    : hasDraft
-                    ? 'bg-amber-100 border-amber-300 text-amber-800'
-                    : 'bg-gray-100 border-gray-300 text-gray-500'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${
-                  hasSubmitted ? 'bg-green-500' : hasDraft ? 'bg-amber-500 animate-pulse' : 'bg-gray-400'
-                }`} />
-                {j.nama}
-                {hasSubmitted && ' ✓'}
-                {hasDraft && ' (draft)'}
-              </div>
-            )
-          })}
+        <p className="text-sm text-slate-500 mb-6">Hanya peserta yang sementara dinilai dan yang sudah dinilai.</p>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b-2 border-slate-200 text-sm text-slate-500">
+                <th className="py-4 px-4 font-semibold w-16">No.</th>
+                <th className="py-4 px-4 font-semibold">Nama</th>
+                <th className="py-4 px-4 font-semibold">Kategori</th>
+                <th className="py-4 px-4 font-semibold">Bacaan Mazmur</th>
+                <th className="py-4 px-4 font-semibold">Status</th>
+                <th className="py-4 px-4 font-semibold">VAR</th>
+                <th className="py-4 px-4 font-semibold text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {data.map((r, i) => (
+                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="py-4 px-4 text-slate-600">{i + 1}</td>
+                  <td className="py-4 px-4 font-medium text-slate-900">{r.nama}</td>
+                  <td className="py-4 px-4 text-amber-700 font-semibold">{r.kategori_nama}</td>
+                  <td className="py-4 px-4 text-slate-600">{r.mazmur_bacaan}</td>
+                  <td className="py-4 px-4">
+                    {r.status === 'dinilai' 
+                      ? <span className="bg-amber-500 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">Sedang Dinilai</span>
+                      : <span className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full font-bold shadow-sm">Final</span>}
+                  </td>
+                  <td className="py-4 px-4 text-slate-600">
+                    {/* VAR Indicator */}
+                  </td>
+                  <td className="py-4 px-4 text-right flex items-center justify-end gap-2">
+                    {r.status === 'dinilai' && (
+                      <>
+                        <button onClick={() => handleAjukanVAR(r.id)} className="bg-pink-600 hover:bg-pink-700 text-white text-xs px-4 py-2 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Ajukan VAR
+                        </button>
+                        <button onClick={() => handleAkhiriPenampilan(r.id, r.sesi_id)} className="bg-[#b31b26] hover:bg-[#8f151e] text-white text-xs px-4 py-2 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
+                          <Lock className="w-3.5 h-3.5" /> Akhiri & Finalkan
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => setSelectedDetailPeserta(r.id)} className="bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 text-xs px-4 py-1.5 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
+                      <Eye className="w-3.5 h-3.5" /> Detail
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {data.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="text-center py-10 text-slate-500">Belum ada peserta yang dinilai</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Penilaian table per peserta */}
-      {isLoading ? (
-        <div className="panel flex justify-center">
-          <div className="spinner" style={{ width: 32, height: 32 }} />
-        </div>
-      ) : Object.keys(byPeserta).length === 0 ? (
-        <div className="panel text-center">
-          <p className="text-[var(--color-text-muted)] text-sm">Belum ada nilai masuk</p>
-        </div>
-      ) : (
-        Object.entries(byPeserta).map(([pesertaId, rows]) => {
-          const pesertaNama = rows[0].peserta_nama
-          const allSubmitted = rows.every((r) => r.is_submitted)
-          const avgTotal = rows.filter((r) => r.is_submitted).length > 0
-            ? (rows.filter((r) => r.is_submitted).reduce((s, r) => s + r.total, 0) / rows.filter((r) => r.is_submitted).length).toFixed(2)
-            : null
-
-          return (
-            <div key={pesertaId} className="panel p-0 overflow-hidden">
-              <div className="p-4 border-b border-[var(--color-border-dark)] bg-[var(--color-cream-2)] flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-[var(--color-text)]">{pesertaNama}</h4>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {rows.filter((r) => r.is_submitted).length}/{juriList.length} juri sudah submit
-                  </p>
-                </div>
-                <div className="text-right flex flex-col items-end gap-1">
-                  {avgTotal && (
-                    <span className="font-display text-2xl font-bold text-[var(--color-text)]">{avgTotal}</span>
-                  )}
-                  {allSubmitted && <div className="badge badge-success text-xs py-0.5 px-2">✓ Semua submit</div>}
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="table-container">
-                  <thead className="table-header">
-                    <tr>
-                      <th>Juri</th>
-                      <th>Kompak</th>
-                      <th>Interp</th>
-                      <th>Artik</th>
-                      <th className="hidden sm:table-cell">Pengh</th>
-                      <th className="hidden sm:table-cell">Penamp</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.juri_id} className="table-row">
-                        <td className="font-medium text-[var(--color-text)]">{r.juri_nama}</td>
-                        <td className="text-red-600">{r.kekompakan ?? <span className="text-gray-400">-</span>}</td>
-                        <td className="text-[var(--color-amber-dark)]">{r.interpretasi ?? <span className="text-gray-400">-</span>}</td>
-                        <td className="text-blue-600">{r.artikulasi ?? <span className="text-gray-400">-</span>}</td>
-                        <td className="hidden sm:table-cell text-purple-600">{r.penghayatan ?? <span className="text-gray-400">-</span>}</td>
-                        <td className="hidden sm:table-cell text-green-600">{r.penampilan ?? <span className="text-gray-400">-</span>}</td>
-                        <td className="font-bold text-[var(--color-text)]">{r.total.toFixed(1)}</td>
-                        <td>
-                          {r.is_submitted ? (
-                            <span className="badge badge-success text-xs px-2 py-0.5">✓ Submit</span>
-                          ) : (
-                            <span className="badge badge-warning text-xs px-2 py-0.5">Draft</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )
-        })
+      {selectedDetailPeserta && (
+        <DetailPesertaModal
+          pesertaId={selectedDetailPeserta}
+          sesiId={data.find(d => d.id === selectedDetailPeserta)?.sesi_id}
+          pesertaNama={data.find(d => d.id === selectedDetailPeserta)?.nama || ''}
+          pesertaUndian={data.find(d => d.id === selectedDetailPeserta)?.nomor_urut || null}
+          pesertaMazmur={data.find(d => d.id === selectedDetailPeserta)?.mazmur_bacaan || null}
+          juriList={juriList}
+          onClose={() => setSelectedDetailPeserta(null)}
+          onAkhiriPenampilan={() => {
+            const row = data.find(d => d.id === selectedDetailPeserta);
+            if (row) handleAkhiriPenampilan(row.id, row.sesi_id);
+          }}
+        />
       )}
     </div>
   )

@@ -45,16 +45,21 @@ export default async function HomePage() {
               </span>
             </div>
           </div>
-          {user && profile ? (
-            <Link href={dashboardLink} className="btn-primary text-sm">
-              Buka Dashboard
+          <div className="flex items-center gap-4">
+            <Link href="/informasi" className="text-sm font-medium hover:text-[var(--color-amber)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+              Info & Pedoman
             </Link>
-          ) : (
-            <Link href="/login" style={{ padding: '0.5rem 1.25rem', border: '1px solid var(--color-border-dark)', borderRadius: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.875rem', transition: 'all 0.2s' }}
-              className="hover:bg-white">
-              Masuk
-            </Link>
-          )}
+            {user && profile ? (
+              <Link href={dashboardLink} className="btn-primary text-sm">
+                Buka Dashboard
+              </Link>
+            ) : (
+              <Link href="/login" style={{ padding: '0.5rem 1.25rem', border: '1px solid var(--color-border-dark)', borderRadius: '0.5rem', color: 'var(--color-text-muted)', fontSize: '0.875rem', transition: 'all 0.2s' }}
+                className="hover:bg-white">
+                Masuk
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 

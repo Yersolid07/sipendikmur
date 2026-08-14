@@ -46,6 +46,7 @@ export type Database = {
           homepage_title: string | null
           homepage_subtitle: string | null
           homepage_content: string | null
+          informasi_lomba: string | null
           created_at: string
           updated_at: string
         }
@@ -56,6 +57,7 @@ export type Database = {
           homepage_title?: string | null
           homepage_subtitle?: string | null
           homepage_content?: string | null
+          informasi_lomba?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           homepage_title?: string | null
           homepage_subtitle?: string | null
           homepage_content?: string | null
+          informasi_lomba?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -115,13 +118,14 @@ export type Database = {
           maks_penghayatan: number | null
           maks_penampilan: number | null
           maks_kekompakan: number | null
+          range_min: number | null
+          range_max: number | null
           created_at: string
         }
         Insert: {
           id?: string
           event_id: string
           nama: string
-          jenis_lomba?: 'perorangan' | 'beregu'
           deskripsi?: string | null
           urutan?: number
           maks_interpretasi?: number | null
@@ -129,7 +133,8 @@ export type Database = {
           maks_penghayatan?: number | null
           maks_penampilan?: number | null
           maks_kekompakan?: number | null
-          created_at?: string
+          range_min?: number | null
+          range_max?: number | null
         }
         Update: {
           id?: string
@@ -143,6 +148,8 @@ export type Database = {
           maks_penghayatan?: number | null
           maks_penampilan?: number | null
           maks_kekompakan?: number | null
+          range_min?: number | null
+          range_max?: number | null
         }
         Relationships: [
           {
@@ -477,6 +484,7 @@ export type Database = {
           avg_penampilan: number | null
           avg_kekompakan: number | null
           avg_total: number | null
+          nilai_akhir_raw: number | null
           nilai_akhir: number | null
           ranking: number | null
         }

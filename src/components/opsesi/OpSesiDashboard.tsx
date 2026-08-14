@@ -118,12 +118,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
     showToast('success', 'Peserta berhasil diaktifkan! Semua juri dinotifikasi.')
   }
 
-  async function handleKunciNilai() {
-    if (!sesi) return
-    await supabase.from('sesi').update({ nilai_dikunci: true, status: 'jeda' } as any).eq('id', sesi.id)
-    setSesi((s) => s ? { ...s, nilai_dikunci: true, status: 'jeda' as const } : s)
-    showToast('success', 'Nilai dikunci. Juri tidak bisa mengubah nilai lagi.')
-  }
+
 
   async function handleUpdatePengumuman() {
     if (!sesi) return
@@ -140,6 +135,8 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
   }
 
   const checkedInList = pesertaList.filter(p => p.is_checked_in)
+  
+  const isSesiActive = sesi?.status === 'berjalan'
 
   return (
     <div className="space-y-6">
@@ -158,14 +155,21 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
             <p className="text-sm text-[var(--color-text-muted)] mb-4">
               Pilih peserta dari daftar yang sudah check-in. Tombol ini akan otomatis membuka form nilai di layar Juri.
             </p>
+            {isSesiActive && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <span className="font-bold">Sesi Sedang Berjalan!</span><br/>
+                Harap tunggu Inspektur Pertandingan (IP) mengakhiri sesi saat ini sebelum memulai peserta baru.
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>
                 <label className="form-label">Pilih Peserta (Hanya yang sudah Check-In)</label>
                 <select 
-                  className="form-input bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
+                  className="form-input bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)] disabled:opacity-50"
                   value={selectedPesertaId}
                   onChange={e => setSelectedPesertaId(e.target.value)}
+                  disabled={isSesiActive}
                 >
                   <option value="">-- Pilih Peserta --</option>
                   {checkedInList.map(p => (
@@ -185,15 +189,16 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                     value={mazmurInput} 
                     onChange={e => setMazmurInput(e.target.value)} 
                     placeholder="Contoh: Mazmur 23:1-6"
-                    className="form-input" 
+                    className="form-input disabled:opacity-50" 
+                    disabled={isSesiActive}
                   />
                 </div>
               )}
 
               <button 
                 onClick={handleMulaiTampil} 
-                disabled={!selectedPesertaId || isSaving}
-                className="w-full btn-primary py-3 text-lg mt-2"
+                disabled={!selectedPesertaId || isSaving || isSesiActive}
+                className="w-full btn-primary py-3 text-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Memproses...' : '▶ MULAI TAMPIL'}
               </button>
@@ -238,12 +243,12 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                 </div>
 
                 {!sesi.nilai_dikunci ? (
-                  <button onClick={handleKunciNilai} className="w-full btn-danger py-2">
-                    🔒 Kunci Nilai & Jeda Sesi
-                  </button>
+                  <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm text-center">
+                    Peserta sedang tampil dan dinilai oleh juri.
+                  </div>
                 ) : (
                   <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-sm text-center">
-                    Nilai telah dikunci. Juri tidak dapat mengubah nilai lagi.
+                    Nilai telah dikunci oleh Inspektur. Juri tidak dapat mengubah nilai lagi.
                   </div>
                 )}
               </div>

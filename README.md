@@ -1,6 +1,6 @@
-# BUMOTIK — Sistem Penjurian Baca Mazmur GMIM
+# Sistem Penjurian GMIM — Sistem Penjurian Baca Mazmur GMIM
 
-Sistem penjurian digital untuk lomba Baca Mazmur GMIM (Benang Ungu Mazmur Oikumene Tahunan Integratif Komsit).
+Sistem penjurian digital untuk lomba Baca Mazmur GMIM.
 
 ## 🏗️ Tech Stack
 

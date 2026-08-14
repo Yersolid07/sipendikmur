@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- RLS Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view profiles" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Superadmin can update profiles" ON public.profiles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
 -- Note: Service role (API) is used to create users.
 
 -- ============================================================
@@ -30,15 +33,22 @@ CREATE POLICY "All authenticated can view profiles" ON public.profiles FOR SELEC
 CREATE TABLE IF NOT EXISTS public.settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   logo_url TEXT,
-  nama_penyelenggara TEXT DEFAULT 'BUMOTIK GMIM',
-  homepage_title TEXT DEFAULT 'BUMOTIK GMIM',
+  nama_penyelenggara TEXT DEFAULT 'Sistem Penjurian GMIM',
+  homepage_title TEXT DEFAULT 'Sistem Penjurian GMIM',
   homepage_subtitle TEXT DEFAULT 'Sistem Penilaian Baca Mazmur',
   homepage_content TEXT,
+  informasi_lomba TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view settings" ON public.settings FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Superadmin can update settings" ON public.settings FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
+CREATE POLICY "Superadmin can insert settings" ON public.settings FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+);
 
 -- ============================================================
 -- TABLE: events (Lomba/Event)
@@ -76,6 +86,8 @@ CREATE TABLE IF NOT EXISTS public.kategori (
   maks_penghayatan DECIMAL(5,2),
   maks_penampilan DECIMAL(5,2),
   maks_kekompakan DECIMAL(5,2), -- Khusus Beregu
+  range_min DECIMAL(8,3) DEFAULT 0,
+  range_max DECIMAL(8,3) DEFAULT 100,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -122,6 +134,7 @@ CREATE TABLE IF NOT EXISTS public.sesi (
   nama_sesi TEXT,
   status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'berjalan', 'jeda', 'selesai')),
   pengumuman TEXT,
+  catatan_ip TEXT,
   nilai_dikunci BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -155,7 +168,8 @@ CREATE TABLE IF NOT EXISTS public.penilaian (
   -- Total dinamis di-calculate di frontend atau VIEW
   total DECIMAL(5,2) DEFAULT 0,
   
-  catatan TEXT,
+  catatan TEXT, -- Catatan umum opsional (untuk IP/Juri/Superadmin)
+  catatan_aspek JSONB DEFAULT '{}'::jsonb, -- 10 Aspek Penilaian (skala 1-5) dari Juri
   is_submitted BOOLEAN DEFAULT FALSE,
   submitted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -278,8 +292,28 @@ SELECT
       ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
       ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
     END) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
-  AS DECIMAL(10,2)) as nilai_akhir,
+  AS DECIMAL(10,3)) as nilai_akhir_raw,
   
+  -- Nilai Akhir (Scaled)
+  CAST(
+    COALESCE(k.range_min, 0) + (
+      (
+        CASE WHEN k.jenis_lomba = 'perorangan' THEN
+          ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + 
+          ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + 
+          ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + 
+          ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
+        ELSE
+          ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) +
+          ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) +
+          ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) +
+          ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
+          ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
+        END
+      ) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
+    ) / 100.0 * (COALESCE(k.range_max, 100) - COALESCE(k.range_min, 0))
+  AS DECIMAL(10,3)) as nilai_akhir,
+
   -- Ranking dalam kategori yang sama
   RANK() OVER (
     PARTITION BY k.id 
@@ -314,3 +348,16 @@ CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON public.events FOR EACH 
 CREATE TRIGGER update_peserta_updated_at BEFORE UPDATE ON public.peserta FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_sesi_updated_at BEFORE UPDATE ON public.sesi FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_penilaian_updated_at BEFORE UPDATE ON public.penilaian FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- PERFORMANCE INDEXES (ADDED FOR OPTIMIZATION)
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_kategori_event_id ON public.kategori(event_id);
+CREATE INDEX IF NOT EXISTS idx_peserta_event_id ON public.peserta(event_id);
+CREATE INDEX IF NOT EXISTS idx_peserta_kategori_id ON public.peserta(kategori_id);
+CREATE INDEX IF NOT EXISTS idx_sesi_event_id ON public.sesi(event_id);
+CREATE INDEX IF NOT EXISTS idx_sesi_kategori_id ON public.sesi(kategori_id);
+CREATE INDEX IF NOT EXISTS idx_penilaian_sesi_id ON public.penilaian(sesi_id);
+CREATE INDEX IF NOT EXISTS idx_penilaian_peserta_id ON public.penilaian(peserta_id);
+CREATE INDEX IF NOT EXISTS idx_penilaian_juri_id ON public.penilaian(juri_id);
+CREATE INDEX IF NOT EXISTS idx_var_requests_penilaian_id ON public.var_requests(penilaian_id);

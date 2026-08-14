@@ -6,6 +6,7 @@ import { Profile, Event, Sesi, Peserta, Kategori } from '@/types/database'
 import TabPenilaian from './TabPenilaian'
 import TabHasilFinal from './TabHasilFinal'
 import TabPeninjauan from './TabPeninjauan'
+import { AlertTriangle } from 'lucide-react'
 
 type ActiveSesi = Sesi & {
   peserta: Peserta | null
@@ -19,15 +20,18 @@ interface Props {
 }
 
 const TABS = [
-  { id: 'penilaian', label: '⚖️ Penilaian', icon: 'gavel' },
+  { id: 'penilaian', label: 'Tugas Penilaian', icon: 'clipboard' },
   { id: 'hasil', label: '🏆 Hasil Final', icon: 'trophy' },
-  { id: 'peninjauan', label: '👁️ Peninjauan', icon: 'eye' },
+  { id: 'peninjauan', label: 'Peninjauan', icon: 'eye' },
 ]
 
 export default function JuriDashboard({ profile, activeEvent, activeSesi: initialSesi }: Props) {
   const [activeTab, setActiveTab] = useState('penilaian')
   const [sesi, setSesi] = useState<ActiveSesi | null>(initialSesi)
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  
+  const [pendingVar, setPendingVar] = useState<any | null>(null)
+  const [hasApprovedVar, setHasApprovedVar] = useState(false)
 
   const supabase = createClient()
 
@@ -59,8 +63,61 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
 
   useEffect(() => {
     const interval = setInterval(pollSesi, 3000)
-    return () => clearInterval(interval)
-  }, [pollSesi])
+    
+    // Real-time var_requests
+    const channel = supabase.channel('var_requests_juri')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'var_requests' }, (payload) => {
+        const newData = payload.new as any
+        if (newData && newData.status === 'pending' && newData.requested_role === 'ip') {
+          setPendingVar((prev: any) => {
+             if (prev?.id !== newData.id) {
+               setHasApprovedVar(false)
+               return newData
+             }
+             return newData
+          })
+        } else if (newData && newData.status !== 'pending') {
+           setPendingVar((prev: any) => {
+              if (prev && prev.id === newData.id) return null
+              return prev
+           })
+        }
+      })
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      supabase.removeChannel(channel)
+    }
+  }, [pollSesi, supabase])
+
+  async function handleApproveVar() {
+    if (!pendingVar) return
+    const { data: v } = await supabase.from('var_requests').select('*').eq('id', pendingVar.id).single()
+    if (!v) return
+
+    let update: any = {}
+    if (v.approved_by_juri_1 === false) update = { approved_by_juri_1: true }
+    else if (v.approved_by_juri_2 === false) update = { approved_by_juri_2: true }
+    else if (v.approved_by_juri_3 === false) update = { approved_by_juri_3: true }
+
+    if (Object.keys(update).length > 0) {
+      if (update.approved_by_juri_3) {
+        update.status = 'approved'
+        update.resolved_at = new Date().toISOString()
+        alert('VAR berhasil disetujui penuh oleh 3 Juri!')
+      }
+      await supabase.from('var_requests').update(update).eq('id', pendingVar.id)
+    }
+    setHasApprovedVar(true)
+  }
+  
+  async function handleRejectVar() {
+    if (!pendingVar) return
+    await supabase.from('var_requests').update({ status: 'rejected', resolved_at: new Date().toISOString() }).eq('id', pendingVar.id)
+    setPendingVar(null)
+    alert('VAR ditolak.')
+  }
 
   if (!activeEvent) {
     return (
@@ -184,6 +241,35 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
           />
         )}
       </div>
+
+      {/* VAR Request Popup */}
+      {pendingVar && !hasApprovedVar && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl relative overflow-hidden animate-fade-in-up">
+            <div className="absolute top-0 left-0 w-full h-2 bg-red-500" />
+            <div className="text-red-500 mb-4 flex justify-center"><AlertTriangle className="w-16 h-16" /></div>
+            <h3 className="text-xl font-bold text-slate-800 text-center mb-2">Permintaan VAR / Reveal</h3>
+            <p className="text-sm text-slate-600 text-center mb-6">
+              Inspektur Pertandingan mengajukan VAR / Revisi Nilai untuk peserta yang sedang tampil.
+            </p>
+            <div className="bg-[var(--color-cream-1)] p-4 rounded-xl border border-[var(--color-border)] mb-6 text-left">
+              <span className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider">Alasan:</span>
+              <p className="font-semibold text-[var(--color-text)]">{pendingVar.alasan}</p>
+            </div>
+            
+            <p className="text-sm text-red-600 mb-4 font-medium">Permintaan ini membutuhkan persetujuan 3 Juri.</p>
+            
+            <div className="flex gap-3">
+              <button onClick={handleRejectVar} className="btn-danger flex-1 py-3 text-sm">
+                ❌ Tolak
+              </button>
+              <button onClick={handleApproveVar} className="btn-primary flex-1 py-3 text-sm">
+                ✅ Setuju
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

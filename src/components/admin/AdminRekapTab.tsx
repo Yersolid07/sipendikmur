@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, RekapPenilaian } from '@/types/database'
+import { FileSpreadsheet, FileText } from 'lucide-react'
 
 interface Props {
   activeEvent: Event | null
@@ -165,6 +166,65 @@ export default function AdminRekapTab({ activeEvent }: Props) {
     }
   }
 
+  async function exportToWord() {
+    setIsExporting(true)
+    try {
+      const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } = await import('docx')
+      const { saveAs } = await import('file-saver')
+
+      const tableRows = [
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: 'Rank', alignment: AlignmentType.CENTER })], shading: { fill: '9B7E35' } }),
+            new TableCell({ children: [new Paragraph({ text: 'Nama Peserta', alignment: AlignmentType.CENTER })], shading: { fill: '9B7E35' } }),
+            new TableCell({ children: [new Paragraph({ text: 'Asal Jemaat', alignment: AlignmentType.CENTER })], shading: { fill: '9B7E35' } }),
+            new TableCell({ children: [new Paragraph({ text: 'Kategori', alignment: AlignmentType.CENTER })], shading: { fill: '9B7E35' } }),
+            new TableCell({ children: [new Paragraph({ text: 'Nilai Akhir', alignment: AlignmentType.CENTER })], shading: { fill: '9B7E35' } }),
+          ],
+        }),
+        ...filtered.map((r) => new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ text: r.ranking?.toString() ?? '-', alignment: AlignmentType.CENTER })] }),
+            new TableCell({ children: [new Paragraph({ text: r.nama_peserta })] }),
+            new TableCell({ children: [new Paragraph({ text: r.asal_jemaat })] }),
+            new TableCell({ children: [new Paragraph({ text: r.kategori })] }),
+            new TableCell({ children: [new Paragraph({ text: r.nilai_akhir?.toString() ?? '-', alignment: AlignmentType.CENTER })] }),
+          ]
+        }))
+      ]
+
+      const table = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: tableRows,
+      })
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [new TextRun({ text: 'REKAP HASIL PENILAIAN BACA MAZMUR GMIM', bold: true, size: 28 })],
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              children: [new TextRun({ text: activeEvent?.nama ?? '', size: 24 })],
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({ text: '' }),
+            table
+          ]
+        }]
+      })
+
+      const blob = await Packer.toBlob(doc)
+      saveAs(blob, `Rekap_Baca_Mazmur_GMIM_${new Date().toISOString().slice(0,10)}.docx`)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   function rankBadge(rank: number | null) {
     if (rank === 1) return '🥇'
     if (rank === 2) return '🥈'
@@ -179,10 +239,10 @@ export default function AdminRekapTab({ activeEvent }: Props) {
         <div className="flex gap-2">
           <button
             onClick={exportToExcel}
-            disabled={isExporting || data.length === 0}
-            className="btn-secondary text-sm"
+            disabled={isExporting}
+            className="btn-primary py-2 px-4 flex items-center gap-2 disabled:opacity-50"
           >
-            {isExporting ? <span className="spinner" /> : '📊'} Excel
+            {isExporting ? <span className="spinner" /> : <FileSpreadsheet className="w-5 h-5" />} Excel
           </button>
           <button
             onClick={exportToCSV}
@@ -197,6 +257,13 @@ export default function AdminRekapTab({ activeEvent }: Props) {
             className="btn-primary text-sm"
           >
             {isExporting ? <span className="spinner" /> : '📑'} PDF
+          </button>
+          <button 
+            onClick={exportToWord}
+            disabled={isExporting}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {isExporting ? <span className="spinner" /> : <FileText className="w-5 h-5" />} Word
           </button>
         </div>
       </div>

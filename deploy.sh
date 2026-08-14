@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting BUMOTIK GMIM Deployment Script..."
+echo "🚀 Starting Sistem Penjurian GMIM Deployment Script..."
 
 # Ensure environment variables are set
 export SUPABASE_DB_PASSWORD="Yersolid07_!"

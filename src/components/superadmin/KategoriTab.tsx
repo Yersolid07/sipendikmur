@@ -22,6 +22,10 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   const [wArtikulasi, setWArtikulasi] = useState(25)
   const [wPenampilan, setWPenampilan] = useState(10)
   const [wKekompakan, setWKekompakan] = useState(30)
+  
+  // Range State
+  const [rangeMin, setRangeMin] = useState(0)
+  const [rangeMax, setRangeMax] = useState(100)
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
@@ -77,6 +81,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
       maks_artikulasi: wArtikulasi,
       maks_penampilan: wPenampilan,
       maks_kekompakan: jenisLomba === 'beregu' ? wKekompakan : null,
+      range_min: rangeMin,
+      range_max: rangeMax,
     }
 
     if (editId) {
@@ -102,6 +108,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
     setWArtikulasi(Number(k.maks_artikulasi))
     setWPenampilan(Number(k.maks_penampilan))
     setWKekompakan(Number(k.maks_kekompakan || 30))
+    setRangeMin(Number(k.range_min ?? 0))
+    setRangeMax(Number(k.range_max ?? 100))
     setShowForm(true)
   }
 
@@ -121,6 +129,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
           setNama('')
           setJenisLomba('perorangan')
           setUrutan(kategoris.length + 1)
+          setRangeMin(0)
+          setRangeMax(100)
           setShowForm(true)
         }} className="btn-primary">+ Tambah Kategori</button>
       </div>
@@ -147,6 +157,20 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
                   <input type="radio" name="jenis" checked={jenisLomba === 'beregu'} onChange={() => setJenisLomba('beregu')} className="text-[var(--color-amber)]" />
                   <span className="text-[var(--color-text)]">👥 Beregu</span>
                 </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--color-border)]">
+            <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">Rentang Nilai Konvensional</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Batas Bawah (Min)</label>
+                <input type="number" step="0.001" value={rangeMin} onChange={e => setRangeMin(Number(e.target.value))} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 80.000" />
+              </div>
+              <div>
+                <label className="form-label">Batas Atas (Max)</label>
+                <input type="number" step="0.001" value={rangeMax} onChange={e => setRangeMax(Number(e.target.value))} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 81.999" />
               </div>
             </div>
           </div>
@@ -213,7 +237,10 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
                 </div>
                 <button onClick={() => handleEdit(k)} className="text-[var(--color-text-light)] hover:text-[var(--color-amber-dark)] opacity-0 group-hover:opacity-100 transition-opacity">✏️</button>
               </div>
-              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-xs text-[var(--color-text-muted)] mt-3 border-t border-[var(--color-border)] pt-2">
+              <div className="text-xs text-[var(--color-text-muted)] mt-1 mb-2">
+                Rentang: <span className="font-semibold text-emerald-600">{Number(k.range_min ?? 0).toFixed(3)} - {Number(k.range_max ?? 100).toFixed(3)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-xs text-[var(--color-text-muted)] mt-2 border-t border-[var(--color-border)] pt-2">
                 {k.jenis_lomba === 'beregu' && <div>Kekompakan: <span className="font-semibold text-[var(--color-text)]">{k.maks_kekompakan}%</span></div>}
                 <div>Interpretasi: <span className="font-semibold text-[var(--color-text)]">{k.maks_interpretasi}%</span></div>
                 <div>Penghayatan: <span className="font-semibold text-[var(--color-text)]">{k.maks_penghayatan}%</span></div>
