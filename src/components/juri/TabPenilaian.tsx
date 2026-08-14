@@ -295,7 +295,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   const isLocked = isSubmitted || sesi.nilai_dikunci
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
+    <>
+      <div className="space-y-5 animate-fade-in-up">
       {/* Peserta Banner */}
       <div className="panel p-6 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.1)] relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
@@ -373,6 +374,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         >
           Catatan Juri
         </button>
+      </div>
+
       </div>
 
       {/* Grade Selection Modal */}
@@ -539,7 +542,6 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         </div>
       )}
 
-
       {/* Actions / Bottom Bar */}
       {!isLocked ? (
         <div className="bg-[var(--color-cream-1)] border border-amber-500/30 rounded-3xl p-6 mt-8 shadow-xl relative overflow-hidden">
@@ -637,12 +639,11 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         </div>
       )}
 
-      {/* Toast */}
       {toast && (
         <div className={`toast toast-${toast.type} z-[200]`}>
           {toast.type === 'success' ? '✓' : '⚠'} {toast.msg}
         </div>
       )}
-    </div>
+    </>
   )
 }
