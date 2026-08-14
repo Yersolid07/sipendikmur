@@ -394,6 +394,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                           </button>
                         )}
                         {p.jumlah_juri_menilai === 3 && (
+                          <>
                           <button 
                             className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                             onClick={() => exportToWord(p)}
