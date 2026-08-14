@@ -120,6 +120,7 @@ export type Database = {
           maks_kekompakan: number | null
           range_min: number | null
           range_max: number | null
+          bahan_mazmur: number[] | null
           created_at: string
         }
         Insert: {
@@ -135,6 +136,7 @@ export type Database = {
           maks_kekompakan?: number | null
           range_min?: number | null
           range_max?: number | null
+          bahan_mazmur?: number[] | null
         }
         Update: {
           id?: string
@@ -150,6 +152,7 @@ export type Database = {
           maks_kekompakan?: number | null
           range_min?: number | null
           range_max?: number | null
+          bahan_mazmur?: number[] | null
         }
         Relationships: [
           {
@@ -168,6 +171,7 @@ export type Database = {
           kategori_id: string
           nama: string
           asal_jemaat: string
+          nomor_peserta: string | null
           nomor_undian: number | null
           mazmur_bacaan: string | null
           is_checked_in: boolean
@@ -183,6 +187,7 @@ export type Database = {
           kategori_id: string
           nama: string
           asal_jemaat: string
+          nomor_peserta?: string | null
           nomor_undian?: number | null
           mazmur_bacaan?: string | null
           is_checked_in?: boolean
@@ -198,6 +203,7 @@ export type Database = {
           kategori_id?: string
           nama?: string
           asal_jemaat?: string
+          nomor_peserta?: string | null
           nomor_undian?: number | null
           mazmur_bacaan?: string | null
           is_checked_in?: boolean
@@ -468,6 +474,7 @@ export type Database = {
           peserta_id: string
           nama_peserta: string
           asal_jemaat: string
+          nomor_peserta: string | null
           nomor_undian: number | null
           mazmur_bacaan: string | null
           potongan_nilai: number

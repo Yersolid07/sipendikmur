@@ -6,7 +6,7 @@ import { X } from 'lucide-react'
 
 interface Props {
   eventId: string
-  kategoriList: { id: string; nama: string }[]
+  kategoriList: { id: string; nama: string; bahan_mazmur?: number[] | null }[]
   onClose: () => void
   onSuccess: () => void
 }
@@ -15,6 +15,7 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
   const [nama, setNama] = useState('')
   const [asalJemaat, setAsalJemaat] = useState('')
   const [kategoriId, setKategoriId] = useState('')
+  const [nomorPeserta, setNomorPeserta] = useState('')
   const [nomorUndian, setNomorUndian] = useState('')
   const [mazmurBacaan, setMazmurBacaan] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -30,6 +31,7 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
       kategori_id: kategoriId,
       nama,
       asal_jemaat: asalJemaat,
+      nomor_peserta: nomorPeserta || null,
       nomor_undian: nomorUndian || null,
       mazmur_bacaan: mazmurBacaan || null,
     }
@@ -43,6 +45,9 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
       onSuccess()
     }
   }
+
+  const selectedKategori = kategoriList.find(k => k.id === kategoriId)
+  const allowedMazmur = selectedKategori?.bahan_mazmur || []
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -80,12 +85,25 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="form-label">No. Undian <span className="text-gray-400 text-xs font-normal">(Opsional)</span></label>
-              <input type="text" value={nomorUndian} onChange={e => setNomorUndian(e.target.value)} className="form-input" placeholder="Contoh: 01" />
+              <label className="form-label">Nomor Peserta (Registrasi) <span className="text-gray-400 text-xs font-normal">(Opsional)</span></label>
+              <input type="text" value={nomorPeserta} onChange={e => setNomorPeserta(e.target.value)} className="form-input" placeholder="ID/No. Pendaftaran" />
             </div>
             <div>
+              <label className="form-label">No. Undian (Tampil) <span className="text-gray-400 text-xs font-normal">(Opsional)</span></label>
+              <input type="number" value={nomorUndian} onChange={e => setNomorUndian(e.target.value)} className="form-input" placeholder="Contoh: 1" />
+            </div>
+            <div className="col-span-2">
               <label className="form-label">Mazmur Bacaan <span className="text-gray-400 text-xs font-normal">(Opsional)</span></label>
-              <input type="text" value={mazmurBacaan} onChange={e => setMazmurBacaan(e.target.value)} className="form-input" placeholder="Contoh: Mazmur 23" />
+              {allowedMazmur.length > 0 ? (
+                <select value={mazmurBacaan} onChange={e => setMazmurBacaan(e.target.value)} className="form-input bg-[var(--color-cream-1)]">
+                  <option value="">-- Pilih Mazmur --</option>
+                  {allowedMazmur.map(m => (
+                    <option key={m} value={`Mazmur ${m}`}>Mazmur {m}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" value={mazmurBacaan} onChange={e => setMazmurBacaan(e.target.value)} className="form-input" placeholder="Contoh: Mazmur 23" />
+              )}
             </div>
           </div>
 

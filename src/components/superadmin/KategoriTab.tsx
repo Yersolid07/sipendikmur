@@ -16,6 +16,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   const [nama, setNama] = useState('')
   const [jenisLomba, setJenisLomba] = useState<'perorangan' | 'beregu'>('perorangan')
   const [urutan, setUrutan] = useState(1)
+  const [bahanMazmur, setBahanMazmur] = useState('')
   
   // Weights State
   const [wInterpretasi, setWInterpretasi] = useState(35)
@@ -84,6 +85,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
       maks_kekompakan: jenisLomba === 'beregu' ? wKekompakan : null,
       range_min: Number(rangeMin),
       range_max: Number(rangeMax),
+      bahan_mazmur: bahanMazmur ? bahanMazmur.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n > 0 && n <= 150) : null
     }
 
     if (editId) {
@@ -111,6 +113,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
     setWKekompakan(Number(k.maks_kekompakan || 30))
     setRangeMin(String(k.range_min ?? 0))
     setRangeMax(String(k.range_max ?? 100))
+    setBahanMazmur(k.bahan_mazmur ? k.bahan_mazmur.join(', ') : '')
     setShowForm(true)
   }
 
@@ -132,6 +135,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
           setUrutan(kategoris.length + 1)
           setRangeMin('0')
           setRangeMax('100')
+          setBahanMazmur('')
           setShowForm(true)
         }} className="btn-primary">+ Tambah Kategori</button>
       </div>
@@ -240,8 +244,11 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
                   <Pencil className="w-4 h-4" />
                 </button>
               </div>
-              <div className="text-xs text-[var(--color-text-muted)] mt-1 mb-2">
-                Rentang: <span className="font-semibold text-emerald-600">{Number(k.range_min ?? 0).toFixed(3)} - {Number(k.range_max ?? 100).toFixed(3)}</span>
+              <div className="text-xs text-[var(--color-text-muted)] mt-1 mb-2 flex flex-col gap-1">
+                <div>Rentang: <span className="font-semibold text-emerald-600">{Number(k.range_min ?? 0).toFixed(3)} - {Number(k.range_max ?? 100).toFixed(3)}</span></div>
+                {k.bahan_mazmur && k.bahan_mazmur.length > 0 && (
+                  <div>Bahan Mazmur: <span className="font-semibold text-[var(--color-text)] px-1.5 py-0.5 bg-[var(--color-cream-2)] rounded border border-[var(--color-border-dark)]">{k.bahan_mazmur.join(', ')}</span></div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-xs text-[var(--color-text-muted)] mt-2 border-t border-[var(--color-border)] pt-2">
                 {k.jenis_lomba === 'beregu' && <div>Kekompakan: <span className="font-semibold text-[var(--color-text)]">{k.maks_kekompakan}%</span></div>}

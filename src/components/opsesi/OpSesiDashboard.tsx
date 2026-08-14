@@ -21,6 +21,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
   const [selectedPesertaId, setSelectedPesertaId] = useState<string>('')
   const [mazmurInput, setMazmurInput] = useState('')
   const [pengumuman, setPengumuman] = useState(initialSesi?.pengumuman || '')
+  const [kategoriList, setKategoriList] = useState<{ id: string; nama: string; bahan_mazmur?: number[] | null }[]>([])
   
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -43,6 +44,10 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
       .order('nomor_undian')
     
     if (data) setPesertaList(data as RekapPenilaian[])
+
+    const { data: katData } = await supabase.from('kategori').select('id, nama, bahan_mazmur').eq('event_id', activeEvent.id)
+    if (katData) setKategoriList(katData)
+
     setIsLoading(false)
   }
 
@@ -145,6 +150,10 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
   
   const isSesiActive = sesi?.status === 'berjalan'
 
+  const selectedPeserta = pesertaList.find(p => p.peserta_id === selectedPesertaId)
+  const selectedKategori = kategoriList.find(k => k.id === selectedPeserta?.kategori_id)
+  const allowedMazmur = selectedKategori?.bahan_mazmur || []
+
   return (
     <div className="space-y-6">
       <div className="panel p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-green-600">
@@ -191,14 +200,28 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
               {selectedPesertaId && (
                 <div className="animate-fade-in-up">
                   <label className="form-label">Update Mazmur Bacaan (Opsional)</label>
-                  <input 
-                    type="text" 
-                    value={mazmurInput} 
-                    onChange={e => setMazmurInput(e.target.value)} 
-                    placeholder="Contoh: Mazmur 23:1-6"
-                    className="form-input disabled:opacity-50" 
-                    disabled={isSesiActive}
-                  />
+                  {allowedMazmur.length > 0 ? (
+                    <select 
+                      value={mazmurInput} 
+                      onChange={e => setMazmurInput(e.target.value)} 
+                      className="form-input bg-[var(--color-cream-1)] disabled:opacity-50"
+                      disabled={isSesiActive}
+                    >
+                      <option value="">-- Tetap Gunakan Mazmur Lama / Pilih --</option>
+                      {allowedMazmur.map(m => (
+                        <option key={m} value={`Mazmur ${m}`}>Mazmur {m}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      type="text" 
+                      value={mazmurInput} 
+                      onChange={e => setMazmurInput(e.target.value)} 
+                      placeholder="Contoh: Mazmur 23:1-6"
+                      className="form-input disabled:opacity-50" 
+                      disabled={isSesiActive}
+                    />
+                  )}
                 </div>
               )}
 

@@ -20,6 +20,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [kategoriFilter, setKategoriFilter] = useState('all')
+  const [kehadiranFilter, setKehadiranFilter] = useState('all')
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   
   const [kategoriList, setKategoriList] = useState<{ id: string; nama: string }[]>([])
@@ -48,7 +49,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
     if (data) setPesertaList(data as RekapPenilaian[])
     
     // Fetch categories for forms
-    const { data: katData } = await supabase.from('kategori').select('id, nama').order('nama')
+    const { data: katData } = await supabase.from('kategori').select('id, nama, bahan_mazmur').order('nama')
     if (katData) setKategoriList(katData)
 
     setIsLoading(false)
@@ -249,6 +250,8 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
 
   const filtered = pesertaList.filter(p => {
     if (kategoriFilter !== 'all' && p.kategori_id !== kategoriFilter) return false
+    if (kehadiranFilter === 'hadir' && !p.is_checked_in) return false
+    if (kehadiranFilter === 'belum' && p.is_checked_in) return false
     if (search && !p.nama_peserta.toLowerCase().includes(search.toLowerCase()) && !p.asal_jemaat.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -288,24 +291,35 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <input 
           type="text" 
           placeholder="Cari peserta / utusan..." 
-          className="form-input flex-1"
+          className="form-input flex-1 min-w-0"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <select 
-          className="form-input sm:w-64 bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
-          value={kategoriFilter}
-          onChange={e => setKategoriFilter(e.target.value)}
-        >
-          <option value="all">Semua Kategori</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.nama}</option>
-          ))}
-        </select>
+        <div className="flex gap-4 flex-wrap md:flex-nowrap">
+          <select 
+            className="form-input w-full md:w-48 bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
+            value={kategoriFilter}
+            onChange={e => setKategoriFilter(e.target.value)}
+          >
+            <option value="all">Semua Kategori</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.nama}</option>
+            ))}
+          </select>
+          <select 
+            className="form-input w-full md:w-48 bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)]"
+            value={kehadiranFilter}
+            onChange={e => setKehadiranFilter(e.target.value)}
+          >
+            <option value="all">Status Kehadiran</option>
+            <option value="hadir">✅ Sudah Check-in</option>
+            <option value="belum">⏳ Belum Hadir</option>
+          </select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -326,14 +340,19 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
               </thead>
               <tbody>
                 {filtered.map(p => (
-                  <tr key={p.peserta_id} className="table-row">
-                    <td className="text-lg font-display font-bold text-[var(--color-text-muted)]">{p.nomor_undian || '-'}</td>
+                  <tr key={p.peserta_id} className={`table-row ${p.is_checked_in ? 'bg-[var(--color-cream-2)] border-l-4 border-l-green-500' : ''}`}>
+                    <td className="text-center">
+                      <div className="text-lg font-display font-bold text-[var(--color-text)]">{p.nomor_undian || '-'}</div>
+                    </td>
                     <td>
                       <span className="badge badge-info text-xs px-2 py-0.5">{p.kategori}</span>
                     </td>
                     <td>
                       <div className="font-semibold text-[var(--color-text)]">{p.nama_peserta}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">{p.asal_jemaat}</div>
+                      {p.nomor_peserta && (
+                        <div className="text-xs text-[var(--color-text-muted)] font-medium">ID: {p.nomor_peserta}</div>
+                      )}
+                      <div className="text-xs text-[var(--color-text-muted)] mt-0.5">{p.asal_jemaat}</div>
                     </td>
                     <td>
                       <div className="text-xs mb-1">
@@ -350,12 +369,17 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                       )}
                     </td>
                     <td className="text-center">
-                      <button 
-                        onClick={() => toggleCheckIn(p.peserta_id, p.is_checked_in)}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${p.is_checked_in ? 'bg-green-500' : 'bg-gray-300'}`}
-                      >
-                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${p.is_checked_in ? 'left-7' : 'left-1'}`} />
-                      </button>
+                      <div className="flex flex-col items-center gap-1">
+                        <button 
+                          onClick={() => toggleCheckIn(p.peserta_id, p.is_checked_in)}
+                          className={`w-12 h-6 rounded-full transition-colors relative ${p.is_checked_in ? 'bg-green-500' : 'bg-gray-300'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${p.is_checked_in ? 'left-7' : 'left-1'}`} />
+                        </button>
+                        <span className="text-[10px] text-[var(--color-text-light)] font-medium">
+                          {p.is_checked_in ? 'HADIR' : 'ABSEN'}
+                        </span>
+                      </div>
                     </td>
                     <td className="text-right">
                       {p.jumlah_juri_menilai === 3 && (

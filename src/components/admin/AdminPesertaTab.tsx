@@ -17,7 +17,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
   const [editId, setEditId] = useState<string | null>(null)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [form, setForm] = useState({
-    nama: '', asal_jemaat: '', kategori_id: '', nomor_undian: '', mazmur_bacaan: '', potongan_nilai: '0', keterangan_potongan: '',
+    nama: '', asal_jemaat: '', kategori_id: '', nomor_peserta: '', nomor_undian: '', mazmur_bacaan: '', potongan_nilai: '0', keterangan_potongan: '',
   })
   const supabase = createClient()
 
@@ -52,7 +52,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
   }, [activeEvent?.id])
 
   function resetForm() {
-    setForm({ nama: '', asal_jemaat: '', kategori_id: kategoriList[0]?.id ?? '', nomor_undian: '', mazmur_bacaan: '', potongan_nilai: '0', keterangan_potongan: '' })
+    setForm({ nama: '', asal_jemaat: '', kategori_id: kategoriList[0]?.id ?? '', nomor_peserta: '', nomor_undian: '', mazmur_bacaan: '', potongan_nilai: '0', keterangan_potongan: '' })
     setEditId(null)
     setShowForm(false)
   }
@@ -66,6 +66,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
       asal_jemaat: form.asal_jemaat,
       kategori_id: form.kategori_id,
       event_id: activeEvent.id,
+      nomor_peserta: form.nomor_peserta || null,
       nomor_undian: form.nomor_undian ? parseInt(form.nomor_undian) : null,
       mazmur_bacaan: form.mazmur_bacaan || null,
       potongan_nilai: parseFloat(form.potongan_nilai),
@@ -98,6 +99,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
       nama: p.nama,
       asal_jemaat: p.asal_jemaat,
       kategori_id: p.kategori_id,
+      nomor_peserta: p.nomor_peserta ?? '',
       nomor_undian: p.nomor_undian?.toString() ?? '',
       mazmur_bacaan: p.mazmur_bacaan ?? '',
       potongan_nilai: p.potongan_nilai.toString(),
@@ -156,7 +158,11 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
               </select>
             </div>
             <div>
-              <label className="form-label">Nomor Undian</label>
+              <label className="form-label">Nomor Peserta (Registrasi)</label>
+              <input type="text" value={form.nomor_peserta} onChange={(e) => setForm((f) => ({ ...f, nomor_peserta: e.target.value }))} className="form-input" placeholder="ID/No. Pendaftaran" />
+            </div>
+            <div>
+              <label className="form-label">Nomor Undian (No. Urut Tampil)</label>
               <input type="number" value={form.nomor_undian} onChange={(e) => setForm((f) => ({ ...f, nomor_undian: e.target.value }))} className="form-input" placeholder="Nomor urut tampil" />
             </div>
             <div>
@@ -211,8 +217,11 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
                       <td className="font-bold text-[var(--color-amber-dark)]">{p.nomor_undian ?? '-'}</td>
                       <td>
                         <div className="font-semibold text-[var(--color-text)]">{p.nama}</div>
+                        {p.nomor_peserta && (
+                          <div className="text-xs text-[var(--color-text-muted)] mt-0.5">ID: {p.nomor_peserta}</div>
+                        )}
                         {p.potongan_nilai > 0 && (
-                          <div className="text-xs text-red-600">-{p.potongan_nilai} poin</div>
+                          <div className="text-xs text-red-600 mt-0.5">-{p.potongan_nilai} poin</div>
                         )}
                       </td>
                       <td className="hidden md:table-cell text-[var(--color-text-muted)]">{p.asal_jemaat}</td>
