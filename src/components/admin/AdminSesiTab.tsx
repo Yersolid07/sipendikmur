@@ -31,36 +31,53 @@ export default function AdminSesiTab({ activeEvent }: Props) {
     setTimeout(() => setToast(null), 3500)
   }
 
-  // Load kategori
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!activeEvent) return
-    async function loadData() {
-      const { data: kat } = await supabase
-        .from('kategori')
-        .select('*')
-        .eq('event_id', activeEvent!.id)
-        .order('urutan')
-      setKategoriList(kat ?? [])
-      if (kat && kat.length > 0) setSelectedKategori(kat[0].id)
+    
+    // Load kategori
+    const { data: kat } = await supabase
+      .from('kategori')
+      .select('*')
+      .eq('event_id', activeEvent!.id)
+      .order('urutan')
+    setKategoriList(kat ?? [])
+    if (kat && kat.length > 0) setSelectedKategori(kat[0].id)
 
-      // Load active sesi
-      const { data: s } = await supabase
-        .from('sesi')
-        .select('*, peserta:peserta_aktif_id(*), kategori:kategori_id(*)')
-        .eq('event_id', activeEvent!.id)
-        .neq('status', 'selesai')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      if (s) {
-        const typed = s as unknown as SesiWithPeserta
-        setSesi(typed)
-        setPengumuman(typed.pengumuman ?? '')
-      }
+    // Load active sesi
+    const { data: s } = await supabase
+      .from('sesi')
+      .select('*, peserta:peserta_aktif_id(*), kategori:kategori_id(*)')
+      .eq('event_id', activeEvent!.id)
+      .neq('status', 'selesai')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      
+    if (s) {
+      const typed = s as unknown as SesiWithPeserta
+      setSesi(typed)
+      setPengumuman(typed.pengumuman ?? '')
     }
+  }, [activeEvent?.id, supabase])
+
+  useEffect(() => {
     loadData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEvent?.id])
+    
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 3000)
+
+    const channel = supabase.channel('admin_sesi')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sesi' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => loadData())
+      .subscribe()
+      
+    return () => {
+      clearInterval(intervalId)
+      supabase.removeChannel(channel)
+    }
+  }, [loadData, supabase])
 
   // Load peserta by kategori
   useEffect(() => {

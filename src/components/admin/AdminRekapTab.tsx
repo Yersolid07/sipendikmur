@@ -16,22 +16,35 @@ export default function AdminRekapTab({ activeEvent }: Props) {
   const [isExporting, setIsExporting] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!activeEvent) return
-    async function load() {
-      const { data: rows } = await supabase
-        .from('v_rekap_penilaian')
-        .select('*')
-        .eq('event_id', activeEvent!.id)
-        .order('ranking', { ascending: true })
-      setData(rows ?? [])
-      setIsLoading(false)
+    const { data: rows } = await supabase
+      .from('v_rekap_penilaian')
+      .select('*')
+      .eq('event_id', activeEvent!.id)
+      .order('ranking', { ascending: true })
+    setData(rows ?? [])
+    setIsLoading(false)
+  }, [activeEvent?.id, supabase])
+
+  useEffect(() => {
+    fetchData()
+    
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      fetchData()
+    }, 3000)
+
+    const channel = supabase.channel('admin_rekap')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'penilaian' }, () => fetchData())
+      .subscribe()
+      
+    return () => {
+      clearInterval(intervalId)
+      supabase.removeChannel(channel)
     }
-    load()
-    const interval = setInterval(load, 3000)
-    return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEvent?.id])
+  }, [fetchData, supabase])
 
   const kategoriList = [...new Set(data.map((d) => d.kategori))]
   const filtered = selectedKategori === 'all' ? data : data.filter((d) => d.kategori === selectedKategori)

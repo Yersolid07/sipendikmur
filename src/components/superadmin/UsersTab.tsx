@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Profile } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X } from 'lucide-react'
+import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X, Eye, EyeOff } from 'lucide-react'
 
 export default function UsersTab({ usersList: initialUsers }: { usersList: Profile[] }) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
@@ -15,6 +15,7 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'superadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'>('juri')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   
   const supabase = createClient()
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -32,6 +33,11 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
   useEffect(() => {
     loadUsers()
 
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadUsers()
+    }, 3000)
+
     const channel = supabase.channel('realtime_profiles')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
         loadUsers()
@@ -39,6 +45,7 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
       .subscribe()
 
     return () => {
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
   }, [loadUsers, supabase])
@@ -158,7 +165,14 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
             </div>
             <div>
               <label className="form-label text-sm">Password {!editId && '*'}</label>
-              <input type="password" required={!editId} minLength={8} value={password} onChange={e => setPassword(e.target.value)} disabled={!!editId} className={`form-input ${editId ? 'bg-gray-100 text-gray-500 cursor-not-allowed placeholder:text-gray-400' : ''}`} placeholder={editId ? 'Gunakan fitur reset password jika lupa' : 'Minimal 8 karakter'} />
+              <div className="relative">
+                <input type={showPassword ? 'text' : 'password'} required={!editId} minLength={8} value={password} onChange={e => setPassword(e.target.value)} disabled={!!editId} className={`form-input pr-10 ${editId ? 'bg-gray-100 text-gray-500 cursor-not-allowed placeholder:text-gray-400' : ''}`} placeholder={editId ? 'Gunakan fitur reset password jika lupa' : 'Minimal 8 karakter'} />
+                {!editId && (
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-600 transition-colors">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                )}
+              </div>
             </div>
             
             <div className="sm:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-[var(--color-border-dark)]">

@@ -48,6 +48,12 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
   useEffect(() => {
     loadData()
+    
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 3000)
+
     const channel = supabase.channel('realtime_peserta_opsesi')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => {
         loadData()
@@ -62,6 +68,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
       .subscribe()
 
     return () => {
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
   }, [activeEvent, sesi?.id])

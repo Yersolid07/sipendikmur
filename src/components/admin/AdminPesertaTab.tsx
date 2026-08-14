@@ -40,7 +40,16 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
     setIsLoading(false)
   }
 
-  useEffect(() => { loadData() }, [activeEvent?.id])
+  useEffect(() => { 
+    loadData() 
+    
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 3000)
+
+    return () => clearInterval(intervalId)
+  }, [activeEvent?.id])
 
   function resetForm() {
     setForm({ nama: '', asal_jemaat: '', kategori_id: kategoriList[0]?.id ?? '', nomor_undian: '', mazmur_bacaan: '', potongan_nilai: '0', keterangan_potongan: '' })

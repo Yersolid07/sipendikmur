@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, Profile } from '@/types/database'
 import DetailPesertaModal from './DetailPesertaModal'
-import { Eye, Lock, Video, AlertTriangle } from 'lucide-react'
+import { Eye, Lock, Video, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
 interface PesertaRow {
   id: string
@@ -40,6 +40,11 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
   })
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDetailPeserta, setSelectedDetailPeserta] = useState<string | null>(null)
+  
+  // Active Sesi Progress
+  const [activePesertaInfo, setActivePesertaInfo] = useState<any>(null)
+  const [juriProgress, setJuriProgress] = useState<any[]>([])
+
   const supabase = createClient()
 
   const loadData = useCallback(async () => {
@@ -93,11 +98,63 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
     }))
 
     setData(mapped)
+
+    // --- PROGRES PENILAIAN JURI ---
+    const activeSesi = sData.find(s => s.status === 'berjalan')
+    if (activeSesi) {
+      const { data: sesiDetail } = await supabase
+        .from('sesi')
+        .select(`
+          peserta_aktif_id, 
+          peserta:peserta_aktif_id(nama, nomor_undian, mazmur_bacaan, status, kategori:kategori_id(nama, jenis_lomba))
+        `)
+        .eq('id', activeSesi.id)
+        .single()
+        
+      if (sesiDetail && sesiDetail.peserta) {
+        setActivePesertaInfo({ ...sesiDetail.peserta, sesi_id: activeSesi.id, id: sesiDetail.peserta_aktif_id })
+        
+        const { data: penData } = await supabase
+          .from('penilaian')
+          .select('juri_id, is_submitted, total, interpretasi, artikulasi, penghayatan, penampilan, kekompakan')
+          .eq('peserta_id', sesiDetail.peserta_aktif_id)
+
+        const mappedProgress = juriList.map(j => {
+          const p = penData?.find(pd => pd.juri_id === j.id)
+          let kriteriaCount = 0
+          if (p) {
+            if (p.interpretasi != null) kriteriaCount++
+            if (p.artikulasi != null) kriteriaCount++
+            if (p.penghayatan != null) kriteriaCount++
+            if (p.penampilan != null) kriteriaCount++
+            if (p.kekompakan != null) kriteriaCount++
+          }
+          return {
+            juri_id: j.id,
+            nama_juri: j.nama,
+            is_submitted: !!p?.is_submitted,
+            total_nilai: p?.total || 0,
+            kriteria_terisi: kriteriaCount
+          }
+        })
+        setJuriProgress(mappedProgress)
+      } else {
+        setActivePesertaInfo(null)
+      }
+    } else {
+      setActivePesertaInfo(null)
+    }
+
     setIsLoading(false)
-  }, [activeEvent, supabase])
+  }, [activeEvent, supabase, juriList])
 
   useEffect(() => {
     loadData()
+    
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 3000)
     
     // Use Supabase Realtime instead of polling
     const channel = supabase.channel('admin_monitor')
@@ -107,6 +164,7 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
       .subscribe()
       
     return () => {
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
   }, [loadData, supabase])
@@ -210,6 +268,81 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Progres Penilaian Juri Component */}
+      <div className="panel p-6 bg-white border border-slate-200 rounded-2xl shadow-sm mt-6">
+        <h3 className="font-display text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Progres Penilaian Juri
+        </h3>
+        <p className="text-sm text-slate-500 mb-6">Progres pengiriman & nilai tiap juri untuk peserta pada sesi yang sedang aktif. Diperbarui setiap 3 detik.</p>
+        
+        {activePesertaInfo ? (
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+              <div>
+                <h4 className="font-bold text-slate-800 text-lg">
+                  {activePesertaInfo.nomor_undian}. {activePesertaInfo.nama}
+                </h4>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {activePesertaInfo.kategori?.nama} {activePesertaInfo.mazmur_bacaan && `- ${activePesertaInfo.mazmur_bacaan}`}
+                </p>
+              </div>
+              <div>
+                <span className="bg-amber-500 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-sm">
+                  Sedang Dinilai
+                </span>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse bg-white">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wider bg-slate-50/50">
+                    <th className="py-3 px-4 font-semibold">Juri</th>
+                    <th className="py-3 px-4 font-semibold">Status Kirim</th>
+                    <th className="py-3 px-4 font-semibold text-center">Nilai Juri</th>
+                    <th className="py-3 px-4 font-semibold text-center">Kriteria Terisi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {juriProgress.map((jp) => (
+                    <tr key={jp.juri_id}>
+                      <td className="py-3 px-4 font-medium text-slate-700">{jp.nama_juri}</td>
+                      <td className="py-3 px-4">
+                        {jp.is_submitted ? (
+                          <span className="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Sudah Kirim
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 text-amber-700 border border-amber-200 text-xs px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Kirim
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold text-slate-700">
+                        {jp.total_nilai > 0 ? jp.total_nilai.toFixed(3) : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm text-slate-500">
+                        {jp.kriteria_terisi} {activePesertaInfo.kategori?.jenis_lomba === 'beregu' ? 'dari 5 kriteria' : 'dari 4 kriteria'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="bg-slate-50 p-3 border-t border-slate-200 text-right">
+               <button onClick={() => setSelectedDetailPeserta(activePesertaInfo.id)} className="bg-white border-2 border-slate-200 hover:bg-slate-100 text-slate-700 text-xs px-4 py-1.5 rounded-lg font-semibold inline-flex items-center gap-1 shadow-sm transition-colors">
+                  <Eye className="w-3.5 h-3.5" /> Detail & Kendali
+               </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-slate-500 border border-dashed border-slate-300 rounded-xl bg-slate-50">
+            Tidak ada peserta yang sedang tampil saat ini.
+          </div>
+        )}
       </div>
 
       {selectedDetailPeserta && (

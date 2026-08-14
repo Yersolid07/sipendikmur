@@ -57,6 +57,11 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
   useEffect(() => {
     loadData()
     
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 3000)
+    
     // Realtime subscription for peserta
     const channel = supabase.channel('realtime_peserta_opregis')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => {
@@ -68,6 +73,7 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
       .subscribe()
 
     return () => {
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
   }, [activeEvent])

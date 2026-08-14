@@ -62,8 +62,13 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
   }, [activeEvent, sesi?.peserta?.id, supabase])
 
   useEffect(() => {
-    const interval = setInterval(pollSesi, 3000)
+    pollSesi()
     
+    // Auto-refresh fallback every 3 seconds
+    const intervalId = setInterval(() => {
+      pollSesi()
+    }, 3000)
+
     // Real-time var_requests
     const channel = supabase.channel('var_requests_juri')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'var_requests' }, (payload) => {
@@ -86,7 +91,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
       .subscribe()
 
     return () => {
-      clearInterval(interval)
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
   }, [pollSesi, supabase])
