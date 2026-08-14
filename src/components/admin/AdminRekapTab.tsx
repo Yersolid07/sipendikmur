@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, RekapPenilaian } from '@/types/database'
 import { FileSpreadsheet, FileText, Trophy, Medal, FileType2, FileBox } from 'lucide-react'
