@@ -86,6 +86,9 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const [juriProgress, setJuriProgress] = useState({ submitted: 0, total: 3 })
+  const [pendingVarRequest, setPendingVarRequest] = useState<any>(null)
+
   const supabase = createClient()
 
   // Score calculation
@@ -153,6 +156,45 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     loadExisting()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesi?.id, sesi?.peserta_aktif_id, profile.id])
+
+  // Realtime progress listener
+  useEffect(() => {
+    if (!sesi?.peserta_aktif_id || !sesi.id) return
+
+    async function fetchProgressAndVar() {
+      // 1. Fetch Progress
+      const { data } = await supabase.from('penilaian').select('id, is_submitted, juri_id').eq('peserta_id', sesi!.peserta_aktif_id)
+      if (data) {
+        setJuriProgress({
+          submitted: data.filter(d => d.is_submitted).length,
+          total: data.length > 0 ? data.length : 3
+        })
+        
+        // Cek apakah nilai kita sudah di-unlock oleh IP
+        const myScore = data.find(d => d.juri_id === profile.id)
+        if (myScore && !myScore.is_submitted && isSubmitted) {
+           setIsSubmitted(false) // Buka kunci layar jika di-unlock oleh IP
+        }
+      }
+      
+      // 2. Fetch VAR Request if exists
+      if (existingPenilaian) {
+        const { data: varData } = await supabase.from('var_requests').select('id, status').eq('penilaian_id', existingPenilaian.id).eq('status', 'pending').maybeSingle()
+        setPendingVarRequest(varData)
+      }
+    }
+
+    fetchProgressAndVar()
+
+    const channel = supabase.channel('juri_progress')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'penilaian', filter: `peserta_id=eq.${sesi.peserta_aktif_id}` }, () => fetchProgressAndVar())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'var_requests' }, () => fetchProgressAndVar())
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [sesi?.peserta_aktif_id, existingPenilaian, profile.id, isSubmitted, supabase])
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -254,7 +296,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     if (!existingPenilaian || !sesi?.peserta_aktif_id) return
     setIsSubmitting(true)
     
-    // 1. Catat Request VAR
+    // 1. Catat Request VAR (Pending, butuh persetujuan IP)
     const varPayload = {
       penilaian_id: existingPenilaian.id,
       peserta_id: sesi.peserta_aktif_id,
@@ -262,20 +304,17 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       requested_role: 'juri',
       alasan: varAlasan,
       lokasi_teks: varLokasi,
-      status: 'approved', // Juri langsung disetujui untuk VAR sendiri
-      resolved_at: new Date().toISOString()
+      status: 'pending'
     }
     await supabase.from('var_requests').insert(varPayload as any)
 
-    // 2. Unlock Penilaian
-    await supabase.from('penilaian').update({ is_submitted: false } as any).eq('id', existingPenilaian.id)
+    // Juri tidak membuka kuncinya sendiri. IP yang akan menyetujui.
     
     setIsSubmitting(false)
-    setIsSubmitted(false)
     setShowVarModal(false)
     setVarAlasan('')
     setVarLokasi('')
-    showToast('success', 'VAR dicatat. Silakan revisi nilai Anda.')
+    showToast('success', 'Pengajuan VAR berhasil dikirim. Menunggu persetujuan IP.')
   }
 
   if (!sesi?.peserta) {
@@ -579,12 +618,23 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           <p className="text-green-600 font-semibold mb-2">
             ✅ Nilai telah disubmit untuk peserta ini
           </p>
-          {!sesi.nilai_dikunci && (
-            <button onClick={() => setShowVarModal(true)} className="btn-secondary text-sm">
-              <><Video className="w-5 h-5 inline mr-1" /> Ajukan VAR (Revisi Nilai)</>
-            </button>
-          )}
-          {sesi.nilai_dikunci && (
+          <div className="mb-4">
+            <span className="inline-block bg-white text-slate-600 text-sm font-medium px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+              Menunggu juri lain... ({juriProgress.submitted} / {juriProgress.total} Juri telah mengirim nilai)
+            </span>
+          </div>
+
+          {!sesi.nilai_dikunci ? (
+            pendingVarRequest ? (
+               <p className="text-amber-700 text-sm font-semibold bg-amber-50 p-3 rounded-xl border border-amber-200">
+                 ⏳ VAR sedang diajukan, menunggu persetujuan Inspektur Pertandingan.
+               </p>
+            ) : (
+              <button onClick={() => setShowVarModal(true)} className="btn-secondary text-sm">
+                <><Video className="w-5 h-5 inline mr-1" /> Ajukan VAR (Revisi Nilai)</>
+              </button>
+            )
+          ) : (
             <p className="text-[var(--color-amber-dark)] text-xs mt-2">
               <Lock className="w-4 h-4 inline mr-1" /> Sesi ini sudah dikunci oleh IP. Anda tidak dapat mengajukan VAR.
             </p>
@@ -598,7 +648,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           <div className="panel w-full max-w-md p-6 animate-fade-in-up">
             <h3 className="font-display text-xl font-semibold text-[var(--color-text)] mb-4">Pengajuan VAR</h3>
             <p className="text-sm text-[var(--color-text-muted)] mb-4">
-              Silakan tuliskan alasan Anda melakukan revisi nilai. Formulir nilai Anda akan terbuka kembali setelah ini.
+              Silakan tuliskan alasan Anda melakukan revisi nilai. Permintaan ini akan dikirim ke Inspektur Pertandingan (IP) untuk disetujui.
             </p>
             <form onSubmit={handleAjukanVAR} className="space-y-4">
               <div>
@@ -631,7 +681,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
                   Batal
                 </button>
                 <button type="submit" disabled={isSubmitting} className="btn-primary flex-1">
-                  Buka Kunci Nilai
+                  Kirim Pengajuan VAR
                 </button>
               </div>
             </form>

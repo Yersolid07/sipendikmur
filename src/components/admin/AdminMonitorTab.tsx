@@ -54,12 +54,34 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
     const [pesertaRes, sesiRes, varRes] = await Promise.all([
       supabase.from('peserta').select('status, id').eq('event_id', activeEvent.id),
       supabase.from('sesi').select('status, id').eq('event_id', activeEvent.id),
-      supabase.from('var_requests').select('status').eq('status', 'pending')
+      supabase.from('var_requests').select('status, peserta_id').eq('status', 'pending')
     ])
 
     const pData = pesertaRes.data || []
     const sData = sesiRes.data || []
     const vData = varRes.data || []
+
+    // Fetch penilaian to check if all juries have submitted for the VAR requests
+    const pendingVarPesertaIds = vData.map(v => v.peserta_id)
+    let validVarCount = 0
+    
+    if (pendingVarPesertaIds.length > 0) {
+      const { data: penData } = await supabase.from('penilaian').select('peserta_id, is_submitted').in('peserta_id', pendingVarPesertaIds)
+      
+      if (penData) {
+         // Group by peserta_id and check if all is_submitted are true
+         const grouped = penData.reduce((acc, curr) => {
+           if (!acc[curr.peserta_id]) acc[curr.peserta_id] = []
+           acc[curr.peserta_id].push(curr.is_submitted)
+           return acc
+         }, {} as Record<string, boolean[]>)
+         
+         validVarCount = vData.filter(v => {
+           const statuses = grouped[v.peserta_id]
+           return statuses && statuses.length > 0 && statuses.every(s => s === true)
+         }).length
+      }
+    }
 
     const sudahTampil = pData.filter(p => p.status === 'selesai').length
     const sedangTampil = pData.filter(p => p.status === 'dinilai').length
@@ -71,7 +93,7 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
       belumTampil: pData.length - sudahTampil - sedangTampil,
       sesiAktif: sData.filter(s => s.status === 'berjalan').length,
       sesiSelesai: sData.filter(s => s.status === 'selesai').length,
-      potensiVar: vData.length
+      potensiVar: validVarCount
     })
 
     // Fetch Monitoring Table (only dinilai & selesai)

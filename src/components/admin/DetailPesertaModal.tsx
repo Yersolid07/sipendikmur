@@ -61,17 +61,23 @@ export default function DetailPesertaModal({
         setKategori((sData as any).kategori)
       }
 
-      // 3. Fetch pending VAR
-      const { data: vData } = await supabase
-        .from('var_requests')
-        .select('*')
-        .eq('peserta_id', pesertaId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-        
-      if (vData) setVarRequest(vData)
+      // 3. Fetch pending VAR (ONLY if all juries have submitted)
+      const allSubmitted = pData && pData.length > 0 && pData.every(p => p.is_submitted)
+      
+      if (allSubmitted) {
+        const { data: vData } = await supabase
+          .from('var_requests')
+          .select('*')
+          .eq('peserta_id', pesertaId)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          
+        setVarRequest(vData || null)
+      } else {
+        setVarRequest(null)
+      }
 
       setIsLoading(false)
     }
