@@ -232,9 +232,17 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     }
 
     if (existingPenilaian) {
-      await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
+      const { error } = await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
+      if (error) {
+         showToast('error', error.message)
+         return
+      }
     } else {
-      const { data } = await supabase.from('penilaian').insert(payload as any).select().single()
+      const { data, error } = await supabase.from('penilaian').insert(payload as any).select().single()
+      if (error) {
+         showToast('error', error.message)
+         return
+      }
       if (data) setExistingPenilaian(data as Penilaian)
     }
     showToast('success', 'Draft nilai tersimpan')
@@ -281,9 +289,29 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     }
 
     if (existingPenilaian) {
-      await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
+      const { error } = await supabase.from('penilaian').update(payload as any).eq('id', existingPenilaian.id)
+      if (error) {
+         showToast('error', error.message)
+         setIsSubmitting(false)
+         return
+      }
     } else {
-      await supabase.from('penilaian').insert(payload as any)
+      const { data, error } = await supabase.from('penilaian').insert(payload as any).select().single()
+      if (error) {
+         showToast('error', error.message)
+         setIsSubmitting(false)
+         return
+      }
+      if (data) setExistingPenilaian(data as Penilaian)
+    }
+
+    // Refetch the data after successful submit to ensure state matches DB
+    const { data: latestData } = await supabase.from('penilaian').select('id, is_submitted, juri_id').eq('peserta_id', sesi.peserta_aktif_id)
+    if (latestData) {
+      setJuriProgress({
+        submitted: latestData.filter(d => d.is_submitted).length,
+        total: latestData.length > 0 ? latestData.length : 3
+      })
     }
 
     setIsSubmitting(false)
@@ -306,7 +334,17 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       lokasi_teks: varLokasi,
       status: 'pending'
     }
-    await supabase.from('var_requests').insert(varPayload as any)
+    const { error } = await supabase.from('var_requests').insert(varPayload as any)
+    
+    if (error) {
+      showToast('error', error.message)
+      setIsSubmitting(false)
+      return
+    }
+
+    // Refetch VAR requests
+    const { data: varData } = await supabase.from('var_requests').select('id, status').eq('penilaian_id', existingPenilaian.id).eq('status', 'pending').maybeSingle()
+    if (varData) setPendingVarRequest(varData)
 
     // Juri tidak membuka kuncinya sendiri. IP yang akan menyetujui.
     
