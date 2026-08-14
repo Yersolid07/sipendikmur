@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   if (isLiveRoute) return supabaseResponse
 
   // Public routes — accessible without login
-  const publicRoutes = ['/', '/login', '/register', '/live']
+  const publicRoutes = ['/', '/login', '/register', '/live', '/informasi']
   const isPublic = publicRoutes.some(r =>
     r === '/' ? url.pathname === '/' : url.pathname.startsWith(r)
   )
