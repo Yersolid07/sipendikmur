@@ -84,6 +84,8 @@ export default function LoginPage() {
         console.error("Reset password error:", error)
         if (error.message.includes("URL not allowed")) {
           setError('Pengaturan Supabase: URL Vercel ini belum diizinkan. Hubungi Superadmin untuk menambahkan URL ini ke "Redirect URLs" di Supabase.')
+        } else if (error.message.includes("rate limit")) {
+          setError('Terlalu banyak permintaan pengiriman email. Silakan tunggu beberapa menit dan coba lagi nanti.')
         } else {
           setError(`Gagal: ${error.message}`)
         }
