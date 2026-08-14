@@ -109,6 +109,7 @@ export default function DetailPesertaModal({
        alert('Gagal menyimpan catatan, pastikan database sudah ter-update.')
     } else {
        alert('Catatan berhasil disimpan!')
+    }
     setIsSaving(false)
   }
 
