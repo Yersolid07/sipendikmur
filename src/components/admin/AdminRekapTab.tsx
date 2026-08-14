@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, RekapPenilaian } from '@/types/database'
-import { FileSpreadsheet, FileText } from 'lucide-react'
+import { FileSpreadsheet, FileText, Trophy, Medal, FileType2, FileBox } from 'lucide-react'
 
 interface Props {
   activeEvent: Event | null
@@ -226,16 +226,18 @@ export default function AdminRekapTab({ activeEvent }: Props) {
   }
 
   function rankBadge(rank: number | null) {
-    if (rank === 1) return '🥇'
-    if (rank === 2) return '🥈'
-    if (rank === 3) return '🥉'
+    if (rank === 1) return <Medal className="w-5 h-5 text-yellow-500 inline" />
+    if (rank === 2) return <Medal className="w-5 h-5 text-gray-400 inline" />
+    if (rank === 3) return <Medal className="w-5 h-5 text-amber-700 inline" />
     return rank ?? '-'
   }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">🏆 Rekap Nilai Akhir</h3>
+        <h3 className="font-display text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-[var(--color-amber-dark)]" /> Rekap Nilai Akhir
+        </h3>
         <div className="flex gap-2">
           <button
             onClick={exportToExcel}
@@ -249,14 +251,14 @@ export default function AdminRekapTab({ activeEvent }: Props) {
             disabled={isExporting || data.length === 0}
             className="btn-secondary text-sm"
           >
-            {isExporting ? <span className="spinner" /> : '📄'} CSV
+            {isExporting ? <span className="spinner" /> : <FileType2 className="w-4 h-4 inline mr-1" />} CSV
           </button>
           <button
             onClick={exportToPDF}
             disabled={isExporting || data.length === 0}
             className="btn-primary text-sm"
           >
-            {isExporting ? <span className="spinner" /> : '📑'} PDF
+            {isExporting ? <span className="spinner" /> : <FileBox className="w-4 h-4 inline mr-1" />} PDF
           </button>
           <button 
             onClick={exportToWord}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, Kategori } from '@/types/database'
+import { User, Users, Pencil } from 'lucide-react'
 
 export default function KategoriTab({ activeEvent }: { activeEvent: Event | undefined }) {
   const [kategoris, setKategoris] = useState<Kategori[]>([])
@@ -24,8 +25,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   const [wKekompakan, setWKekompakan] = useState(30)
   
   // Range State
-  const [rangeMin, setRangeMin] = useState(0)
-  const [rangeMax, setRangeMax] = useState(100)
+  const [rangeMin, setRangeMin] = useState('0')
+  const [rangeMax, setRangeMax] = useState('100')
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
@@ -81,8 +82,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
       maks_artikulasi: wArtikulasi,
       maks_penampilan: wPenampilan,
       maks_kekompakan: jenisLomba === 'beregu' ? wKekompakan : null,
-      range_min: rangeMin,
-      range_max: rangeMax,
+      range_min: Number(rangeMin),
+      range_max: Number(rangeMax),
     }
 
     if (editId) {
@@ -108,8 +109,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
     setWArtikulasi(Number(k.maks_artikulasi))
     setWPenampilan(Number(k.maks_penampilan))
     setWKekompakan(Number(k.maks_kekompakan || 30))
-    setRangeMin(Number(k.range_min ?? 0))
-    setRangeMax(Number(k.range_max ?? 100))
+    setRangeMin(String(k.range_min ?? 0))
+    setRangeMax(String(k.range_max ?? 100))
     setShowForm(true)
   }
 
@@ -129,8 +130,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
           setNama('')
           setJenisLomba('perorangan')
           setUrutan(kategoris.length + 1)
-          setRangeMin(0)
-          setRangeMax(100)
+          setRangeMin('0')
+          setRangeMax('100')
           setShowForm(true)
         }} className="btn-primary">+ Tambah Kategori</button>
       </div>
@@ -151,11 +152,11 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="jenis" checked={jenisLomba === 'perorangan'} onChange={() => setJenisLomba('perorangan')} className="text-[var(--color-amber)]" />
-                  <span className="text-[var(--color-text)]">👤 Perorangan</span>
+                  <span className="text-[var(--color-text)] flex items-center gap-1"><User className="w-4 h-4" /> Perorangan</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="jenis" checked={jenisLomba === 'beregu'} onChange={() => setJenisLomba('beregu')} className="text-[var(--color-amber)]" />
-                  <span className="text-[var(--color-text)]">👥 Beregu</span>
+                  <span className="text-[var(--color-text)] flex items-center gap-1"><Users className="w-4 h-4" /> Beregu</span>
                 </label>
               </div>
             </div>
@@ -166,11 +167,11 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="form-label">Batas Bawah (Min)</label>
-                <input type="number" step="0.001" value={rangeMin} onChange={e => setRangeMin(Number(e.target.value))} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 80.000" />
+                <input type="number" step="0.001" value={rangeMin} onChange={e => setRangeMin(e.target.value)} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 80.000" />
               </div>
               <div>
                 <label className="form-label">Batas Atas (Max)</label>
-                <input type="number" step="0.001" value={rangeMax} onChange={e => setRangeMax(Number(e.target.value))} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 81.999" />
+                <input type="number" step="0.001" value={rangeMax} onChange={e => setRangeMax(e.target.value)} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 81.999" />
               </div>
             </div>
           </div>
@@ -231,11 +232,13 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h4 className="font-semibold text-[var(--color-text)]">{k.nama}</h4>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${k.jenis_lomba === 'perorangan' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                    {k.jenis_lomba === 'perorangan' ? '👤 Perorangan' : '👥 Beregu'}
+                  <span className={`mt-1 flex items-center gap-1 w-fit text-xs px-2 py-0.5 rounded-full ${k.jenis_lomba === 'perorangan' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                    {k.jenis_lomba === 'perorangan' ? <><User className="w-3 h-3"/> Perorangan</> : <><Users className="w-3 h-3"/> Beregu</>}
                   </span>
                 </div>
-                <button onClick={() => handleEdit(k)} className="text-[var(--color-text-light)] hover:text-[var(--color-amber-dark)] opacity-0 group-hover:opacity-100 transition-opacity">✏️</button>
+                <button onClick={() => handleEdit(k)} className="text-[var(--color-text-light)] hover:text-[var(--color-amber-dark)] opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-4 h-4" />
+                </button>
               </div>
               <div className="text-xs text-[var(--color-text-muted)] mt-1 mb-2">
                 Rentang: <span className="font-semibold text-emerald-600">{Number(k.range_min ?? 0).toFixed(3)} - {Number(k.range_max ?? 100).toFixed(3)}</span>

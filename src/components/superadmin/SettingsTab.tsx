@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Setting } from '@/types/database'
 import dynamic from 'next/dynamic'
-import 'react-quill/dist/quill.snow.css'
+import 'react-quill-new/dist/quill.snow.css'
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false })
 
 export default function SettingsTab() {
   const [settings, setSettings] = useState<Setting | null>(null)
@@ -26,7 +26,7 @@ export default function SettingsTab() {
 
   async function loadSettings() {
     setIsLoading(true)
-    const { data } = await supabase.from('settings').select('*').limit(1).single()
+    const { data } = await supabase.from('settings').select('*').limit(1).maybeSingle()
     if (data) {
       setSettings(data as Setting)
       setNamaPenyelenggara(data.nama_penyelenggara || '')

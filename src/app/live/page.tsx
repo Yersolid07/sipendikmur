@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import LiveScreen from '@/components/live/LiveScreen'
 import { Event, Setting, Sesi } from '@/types/database'
 
+export const dynamic = 'force-dynamic'
+
 type ActiveSesi = Sesi & {
   peserta: { id: string; nama: string; mazmur_bacaan: string | null; asal_jemaat: string } | null
   kategori: { id: string; nama: string; jenis_lomba: 'perorangan' | 'beregu' } | null

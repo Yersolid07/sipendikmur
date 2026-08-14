@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, Peserta, Kategori } from '@/types/database'
+import { Users, Pencil, UserRound } from 'lucide-react'
 
 interface Props {
   activeEvent: Event | null
@@ -116,7 +117,9 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">👤 Manajemen Peserta</h3>
+          <h3 className="font-display text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
+            <UserRound className="w-5 h-5 text-[var(--color-amber-dark)]" /> Manajemen Peserta
+          </h3>
           <p className="text-xs text-[var(--color-text-muted)]">{pesertaList.length} peserta terdaftar</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true) }} className="btn-primary">
@@ -162,7 +165,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
             <div className="sm:col-span-2 flex gap-3 pt-1">
               <button type="button" onClick={resetForm} className="btn-secondary">Batal</button>
               <button type="submit" className="btn-primary">
-                {editId ? '✏️ Simpan Perubahan' : '+ Tambah Peserta'}
+                {editId ? <><Pencil className="w-4 h-4 inline mr-1" /> Simpan Perubahan</> : '+ Tambah Peserta'}
               </button>
             </div>
           </form>
@@ -175,7 +178,7 @@ export default function AdminPesertaTab({ activeEvent }: Props) {
           <div className="p-10 flex justify-center"><div className="spinner" style={{ width: 32, height: 32 }} /></div>
         ) : pesertaList.length === 0 ? (
           <div className="p-10 text-center">
-            <div className="text-4xl mb-3">👥</div>
+            <div className="flex justify-center mb-3 text-[var(--color-text-muted)] opacity-50"><Users className="w-12 h-12" /></div>
             <p className="text-[var(--color-text-muted)] text-sm">Belum ada peserta terdaftar</p>
           </div>
         ) : (

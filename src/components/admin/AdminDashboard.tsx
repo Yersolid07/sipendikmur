@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Profile, Event } from '@/types/database'
 import AdminMonitorTab from './AdminMonitorTab'
 import AdminRekapTab from './AdminRekapTab'
+import { Activity, Trophy, Calendar, Scale, ClipboardList, ShieldCheck } from 'lucide-react'
 
 interface Props {
   profile: Profile
@@ -12,8 +13,8 @@ interface Props {
 }
 
 const TABS = [
-  { id: 'monitor', label: '📊 Monitor Live', desc: 'Pantau nilai real-time' },
-  { id: 'rekap', label: '🏆 Rekap Final', desc: 'Lihat hasil akhir sementara' },
+  { id: 'monitor', label: <><Activity className="w-4 h-4 inline mr-1" /> Monitor Live</>, desc: 'Pantau nilai real-time' },
+  { id: 'rekap', label: <><Trophy className="w-4 h-4 inline mr-1" /> Rekap Final</>, desc: 'Lihat hasil akhir sementara' },
 ]
 
 export default function AdminDashboard({ profile, events, juriList }: Props) {
@@ -48,25 +49,25 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
         <StatCard
           label="Event Aktif"
           value={activeEvent ? 1 : 0}
-          icon="📅"
+          icon={<Calendar className="w-6 h-6 inline" />}
           color="amber"
         />
         <StatCard
           label="Total Juri"
           value={juriList.length}
-          icon="⚖️"
+          icon={<Scale className="w-6 h-6 inline" />}
           color="blue"
         />
         <StatCard
           label="Total Event"
           value={events.length}
-          icon="📋"
+          icon={<ClipboardList className="w-6 h-6 inline" />}
           color="purple"
         />
         <StatCard
           label="Role"
           value={profile.role === 'superadmin' ? 'Admin' : 'IP'}
-          icon="🛡️"
+          icon={<ShieldCheck className="w-6 h-6 inline" />}
           color="green"
           isText
         />
@@ -109,7 +110,7 @@ function StatCard({
 }: {
   label: string
   value: number | string
-  icon: string
+  icon: React.ReactNode
   color: 'amber' | 'blue' | 'purple' | 'green'
   isText?: boolean
 }) {

@@ -6,7 +6,7 @@ import { Profile, Event, Sesi, Peserta, Kategori } from '@/types/database'
 import TabPenilaian from './TabPenilaian'
 import TabHasilFinal from './TabHasilFinal'
 import TabPeninjauan from './TabPeninjauan'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Trophy, BookOpen, PauseCircle, Megaphone, CheckCircle2, XCircle } from 'lucide-react'
 
 type ActiveSesi = Sesi & {
   peserta: Peserta | null
@@ -21,7 +21,7 @@ interface Props {
 
 const TABS = [
   { id: 'penilaian', label: 'Tugas Penilaian', icon: 'clipboard' },
-  { id: 'hasil', label: '🏆 Hasil Final', icon: 'trophy' },
+  { id: 'hasil', label: <><Trophy className="w-4 h-4 inline mr-1" /> Hasil Final</>, icon: 'trophy' },
   { id: 'peninjauan', label: 'Peninjauan', icon: 'eye' },
 ]
 
@@ -123,7 +123,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="panel p-10">
-          <div className="text-5xl mb-4">📖</div>
+          <div className="mb-4"><BookOpen className="w-16 h-16 mx-auto text-[var(--color-amber-dark)] opacity-50" /></div>
           <h2 className="font-display text-2xl font-semibold text-[var(--color-text)] mb-2">
             Belum Ada Event Aktif
           </h2>
@@ -189,8 +189,8 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
             )}
           </div>
           {sesi.pengumuman && (
-            <div className="mt-3 p-2 rounded-lg bg-blue-100 border border-blue-300 text-blue-800 text-sm">
-              📢 {sesi.pengumuman}
+            <div className="mt-3 p-2 rounded-lg bg-blue-100 border border-blue-300 text-blue-800 text-sm flex items-center gap-2">
+              <Megaphone className="w-4 h-4 shrink-0" /> {sesi.pengumuman}
             </div>
           )}
         </div>
@@ -198,9 +198,9 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
         <div className="panel p-4" style={{ borderColor: 'var(--color-border-dark)', background: 'var(--color-cream-1)' }}>
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-            <p className="text-[var(--color-text-muted)] text-sm">
+            <p className="text-[var(--color-text-muted)] text-sm flex items-center gap-1">
               {sesi?.status === 'jeda'
-                ? '⏸️ Sesi sedang dijeda. Tunggu instruksi berikutnya.'
+                ? <><PauseCircle className="w-4 h-4 inline" /> Sesi sedang dijeda. Tunggu instruksi berikutnya.</>
                 : 'Menunggu peserta berikutnya...'}
             </p>
           </div>
@@ -260,11 +260,11 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
             <p className="text-sm text-red-600 mb-4 font-medium">Permintaan ini membutuhkan persetujuan 3 Juri.</p>
             
             <div className="flex gap-3">
-              <button onClick={handleRejectVar} className="btn-danger flex-1 py-3 text-sm">
-                ❌ Tolak
+              <button onClick={handleRejectVar} className="btn-danger flex-1 py-3 text-sm flex items-center justify-center gap-2">
+                <XCircle className="w-4 h-4" /> Tolak
               </button>
-              <button onClick={handleApproveVar} className="btn-primary flex-1 py-3 text-sm">
-                ✅ Setuju
+              <button onClick={handleApproveVar} className="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> Setuju
               </button>
             </div>
           </div>

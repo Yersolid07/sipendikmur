@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event } from '@/types/database'
+import { Calendar, Pencil, MapPin } from 'lucide-react'
 
 interface Props {
   events: Event[]
@@ -79,7 +80,9 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-display text-lg font-semibold text-[var(--color-text)]">📅 Manajemen Event</h3>
+          <h3 className="font-display text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[var(--color-amber-dark)]" /> Manajemen Event
+          </h3>
           <p className="text-xs text-[var(--color-text-muted)]">{events.length} event tercatat</p>
         </div>
         <button
@@ -114,7 +117,7 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
             <div className="sm:col-span-2 flex gap-3">
               <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Batal</button>
               <button type="submit" disabled={isSaving} className="btn-primary">
-                {isSaving ? <><span className="spinner" /> Menyimpan...</> : (editId ? '✏️ Simpan' : '+ Buat Event')}
+                {isSaving ? <><span className="spinner" /> Menyimpan...</> : (editId ? <><Pencil className="w-4 h-4 inline mr-1" /> Simpan</> : '+ Buat Event')}
               </button>
             </div>
           </form>
@@ -125,7 +128,7 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
       <div className="space-y-3">
         {events.length === 0 ? (
           <div className="panel text-center">
-            <div className="text-4xl mb-3">📅</div>
+            <div className="flex justify-center mb-3 text-[var(--color-text-muted)] opacity-50"><Calendar className="w-12 h-12" /></div>
             <p className="text-[var(--color-text-muted)] text-sm">Belum ada event. Buat event pertama!</p>
           </div>
         ) : events.map((ev) => {
@@ -140,8 +143,8 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
                   </div>
                   <h4 className="font-display text-lg font-semibold text-[var(--color-text)]">{ev.nama}</h4>
                   <div className="flex items-center gap-3 mt-1 text-xs text-[var(--color-text-muted)]">
-                    {ev.tanggal && <span>📅 {new Date(ev.tanggal).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>}
-                    {ev.lokasi && <span>📍 {ev.lokasi}</span>}
+                    {ev.tanggal && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(ev.tanggal).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>}
+                    {ev.lokasi && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {ev.lokasi}</span>}
                   </div>
                   {ev.deskripsi && <p className="text-sm text-[var(--color-text-muted)] mt-1">{ev.deskripsi}</p>}
                 </div>
@@ -160,7 +163,7 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
                     onClick={() => { setEditId(ev.id); setForm({ nama: ev.nama, deskripsi: ev.deskripsi ?? '', tanggal: ev.tanggal ?? '', lokasi: ev.lokasi ?? '' }); setShowForm(true) }}
                     className="btn-secondary text-xs py-1 px-3"
                   >
-                    ✏️ Edit
+                    <Pencil className="w-3 h-3 inline mr-1" /> Edit
                   </button>
                 </div>
               </div>
