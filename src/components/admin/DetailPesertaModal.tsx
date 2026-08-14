@@ -109,8 +109,24 @@ export default function DetailPesertaModal({
        alert('Gagal menyimpan catatan, pastikan database sudah ter-update.')
     } else {
        alert('Catatan berhasil disimpan!')
-    }
     setIsSaving(false)
+  }
+
+  async function handleBukaKunciVAR() {
+    if (!varRequest) return
+    setIsSaving(true)
+    
+    // 1. Update var_requests to approved
+    await supabase.from('var_requests').update({ status: 'approved', resolved_at: new Date().toISOString() }).eq('id', varRequest.id)
+    
+    // 2. Unlock the specific juri's penilaian
+    if (varRequest.penilaian_id) {
+      await supabase.from('penilaian').update({ is_submitted: false } as any).eq('id', varRequest.penilaian_id)
+    }
+    
+    setVarRequest(null)
+    setIsSaving(false)
+    alert('Kunci nilai juri berhasil dibuka!')
   }
 
   // Helper untuk mendapatkan status pengiriman juri
@@ -150,12 +166,25 @@ export default function DetailPesertaModal({
                 <div className="bg-[#ffe4e6] border border-[#f43f5e] rounded-xl p-4 shadow-sm relative overflow-hidden">
                    <h3 className="text-[#be123c] font-bold flex items-center gap-2 mb-2">
                      <AlertTriangle className="w-5 h-5" /> 
-                     Potensi VAR — menunggu keputusan Inspektur
+                     {varRequest.requested_role === 'juri' ? 'Pengajuan VAR dari Juri' : 'Potensi VAR — menunggu persetujuan Juri'}
                    </h3>
                    <div className="text-[#9f1239] text-sm space-y-1 mb-3">
-                     <p><span className="font-semibold">Bacaan:</span> {pesertaMazmur}</p>
-                     <p className="opacity-80 mt-2">Tidak ada komponen tercatat.</p>
-                     <p className="opacity-80">Tulis catatan/rekomendasi lalu pilih keputusan (Setujui / Tolak / Catatan Saja). Menyimpan akan menutup Potensi VAR.</p>
+                     <p><span className="font-semibold">Alasan VAR:</span> {varRequest.alasan}</p>
+                     {varRequest.lokasi_teks && <p><span className="font-semibold">Lokasi Teks:</span> {varRequest.lokasi_teks}</p>}
+                     
+                     {varRequest.requested_role === 'juri' ? (
+                       <div className="mt-4">
+                         <button 
+                           onClick={handleBukaKunciVAR}
+                           className="bg-[#be123c] text-white px-4 py-2 rounded-lg font-semibold hover:bg-[#9f1239] transition-colors"
+                           disabled={isSaving}
+                         >
+                           {isSaving ? 'Memproses...' : 'Izinkan & Buka Kunci Juri'}
+                         </button>
+                       </div>
+                     ) : (
+                       <p className="opacity-80 mt-2 italic">Menunggu ketiga juri menyetujui VAR yang Anda ajukan.</p>
+                     )}
                    </div>
                 </div>
               )}
