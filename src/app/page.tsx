@@ -3,7 +3,20 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Profile } from '@/types/database'
 
-export default async function HomePage() {
+import { redirect } from 'next/navigation'
+
+interface Props {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined }
+}
+
+export default async function HomePage(props: Props) {
+  // In Next.js 15, searchParams is a Promise. We handle both for compatibility.
+  const resolvedSearchParams = props.searchParams instanceof Promise ? await props.searchParams : props.searchParams
+  
+  if (resolvedSearchParams?.code) {
+    redirect(`/auth/callback?code=${resolvedSearchParams.code}&next=/reset-password`)
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
