@@ -81,7 +81,12 @@ export default function LoginPage() {
       })
 
       if (error) {
-        setError('Gagal mengirim email reset. Pastikan email terdaftar atau hubungi Superadmin.')
+        console.error("Reset password error:", error)
+        if (error.message.includes("URL not allowed")) {
+          setError('Pengaturan Supabase: URL Vercel ini belum diizinkan. Hubungi Superadmin untuk menambahkan URL ini ke "Redirect URLs" di Supabase.')
+        } else {
+          setError(`Gagal: ${error.message}`)
+        }
       } else {
         setSuccess('Link reset password telah dikirim ke email Anda! Silakan cek kotak masuk atau folder spam.')
       }
