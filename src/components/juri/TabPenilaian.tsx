@@ -121,9 +121,14 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         const p = data as Penilaian
         setExistingPenilaian(p)
         setIsSubmitted(p.is_submitted)
-        // Note: we might have saved raw totals in DB before. For now, assume DB stores Grades 1-5.
-        // We will need to update DB schema if we change from values to grades. 
-        setScores({
+        const storageKey = `juri_draft_${sesi.id}_${profile.id}`
+        const local = localStorage.getItem(storageKey)
+        let localScores = null
+        if (local && !p.is_submitted) {
+          try { localScores = JSON.parse(local) } catch(e) {}
+        }
+
+        setScores(localScores || {
           kekompakan: (p as any).kekompakan ?? 0,
           interpretasi: p.interpretasi ?? 0,
           artikulasi: p.artikulasi ?? 0,
@@ -137,7 +142,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         // Reset for new peserta
         setExistingPenilaian(null)
         setIsSubmitted(false)
-        setScores({ kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '', catatan_aspek: {}, perhatian: { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] } })
+        const storageKey = `juri_draft_${sesi.id}_${profile.id}`
+        const local = localStorage.getItem(storageKey)
+        let localScores = null
+        if (local) {
+          try { localScores = JSON.parse(local) } catch(e) {}
+        }
+        setScores(localScores || { kekompakan: 0, interpretasi: 0, artikulasi: 0, penghayatan: 0, penampilan: 0, catatan: '', catatan_aspek: {}, perhatian: { clear_text: true, salah_kata: [], menambah_kata: [], mengurangi_kata: [] } })
       }
       setIsLoading(false)
     }
@@ -145,6 +156,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     loadExisting()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesi?.id, sesi?.peserta_aktif_id, profile.id])
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    if (isLoading || isSubmitted || !sesi?.id) return
+    const storageKey = `juri_draft_${sesi.id}_${profile.id}`
+    localStorage.setItem(storageKey, JSON.stringify(scores))
+  }, [scores, isLoading, isSubmitted, sesi?.id, profile.id])
 
   function showToast(type: 'success' | 'error', msg: string) {
     setToast({ type, msg })

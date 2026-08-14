@@ -16,7 +16,8 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
   const [nama, setNama] = useState('')
   const [jenisLomba, setJenisLomba] = useState<'perorangan' | 'beregu'>('perorangan')
   const [urutan, setUrutan] = useState(1)
-  const [bahanMazmur, setBahanMazmur] = useState('')
+  const [bahanMazmur, setBahanMazmur] = useState<number[]>([])
+  const [showMazmurModal, setShowMazmurModal] = useState(false)
   
   // Weights State
   const [wInterpretasi, setWInterpretasi] = useState(35)
@@ -85,7 +86,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
       maks_kekompakan: jenisLomba === 'beregu' ? wKekompakan : null,
       range_min: Number(rangeMin),
       range_max: Number(rangeMax),
-      bahan_mazmur: bahanMazmur ? bahanMazmur.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n > 0 && n <= 150) : null
+      bahan_mazmur: bahanMazmur.length > 0 ? bahanMazmur.sort((a,b)=>a-b) : null
     }
 
     if (editId) {
@@ -113,7 +114,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
     setWKekompakan(Number(k.maks_kekompakan || 30))
     setRangeMin(String(k.range_min ?? 0))
     setRangeMax(String(k.range_max ?? 100))
-    setBahanMazmur(k.bahan_mazmur ? k.bahan_mazmur.join(', ') : '')
+    setBahanMazmur(k.bahan_mazmur ?? [])
     setShowForm(true)
   }
 
@@ -135,7 +136,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
           setUrutan(kategoris.length + 1)
           setRangeMin('0')
           setRangeMax('100')
-          setBahanMazmur('')
+          setBahanMazmur([])
           setShowForm(true)
         }} className="btn-primary">+ Tambah Kategori</button>
       </div>
@@ -176,6 +177,28 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
               <div>
                 <label className="form-label">Batas Atas (Max)</label>
                 <input type="number" step="0.001" value={rangeMax} onChange={e => setRangeMax(e.target.value)} required className="form-input text-[var(--color-text)]" placeholder="Contoh: 81.999" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--color-border)]">
+            <h4 className="text-sm font-semibold text-[var(--color-text)] mb-3">Bahan Mazmur (Opsional)</h4>
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-[var(--color-text-muted)]">
+                Jika dibiarkan kosong, peserta bebas memilih (atau menginput manual) Mazmur berapapun. Jika diisi, peserta wajib memilih dari daftar ini saat registrasi.
+              </p>
+              <div className="flex flex-wrap gap-2 items-center">
+                {[...bahanMazmur].sort((a,b)=>a-b).map(m => (
+                  <span key={m} className="px-2 py-1 bg-[var(--color-cream-2)] border border-[var(--color-border-dark)] rounded text-xs font-semibold">
+                    Mazmur {m}
+                  </span>
+                ))}
+                {bahanMazmur.length === 0 && (
+                  <span className="text-sm text-slate-500 italic">Bebas (Tidak ditentukan)</span>
+                )}
+                <button type="button" onClick={() => setShowMazmurModal(true)} className="ml-2 px-3 py-1 bg-[var(--color-amber-dark)] text-white text-xs font-semibold rounded hover:bg-amber-700 transition-colors">
+                  {bahanMazmur.length > 0 ? 'Ubah' : 'Pilih Mazmur'}
+                </button>
               </div>
             </div>
           </div>
@@ -264,6 +287,65 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
           )}
         </div>
       )}
+
+      {/* Modal Mazmur */}
+      {showMazmurModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white text-slate-900 w-full max-w-4xl rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="font-display text-2xl font-bold text-amber-900">Pilih Bahan Mazmur</h3>
+                <p className="text-slate-500 text-sm mt-1">Centang pasal Mazmur yang dilombakan pada kategori ini.</p>
+              </div>
+              <button 
+                onClick={() => setShowMazmurModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 hover:bg-slate-300"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex gap-3 mb-6">
+              <button type="button" onClick={() => setBahanMazmur(Array.from({ length: 150 }, (_, i) => i + 1))} className="px-4 py-2 bg-slate-100 border border-slate-300 rounded text-sm font-semibold hover:bg-slate-200">
+                Pilih Semua
+              </button>
+              <button type="button" onClick={() => setBahanMazmur([])} className="px-4 py-2 bg-slate-100 border border-slate-300 rounded text-sm font-semibold hover:bg-slate-200">
+                Hapus Semua
+              </button>
+            </div>
+
+            <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-6">
+              {Array.from({ length: 150 }, (_, i) => i + 1).map(pasal => {
+                const isActive = bahanMazmur.includes(pasal)
+                return (
+                  <button
+                    key={pasal}
+                    type="button"
+                    onClick={() => {
+                      if (isActive) {
+                        setBahanMazmur(bahanMazmur.filter(m => m !== pasal))
+                      } else {
+                        setBahanMazmur([...bahanMazmur, pasal])
+                      }
+                    }}
+                    className={`w-full aspect-square rounded flex items-center justify-center text-sm font-semibold transition-colors border
+                      ${isActive ? 'bg-amber-600 border-amber-600 text-white shadow-inner' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-amber-400 hover:bg-amber-50'}`}
+                  >
+                    {pasal}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+              <button type="button" onClick={() => setShowMazmurModal(false)} className="px-6 py-2.5 bg-amber-800 text-white rounded-xl font-semibold hover:bg-amber-700">
+                Selesai
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
     </div>
   )

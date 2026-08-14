@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Profile, Event, Setting, RekapPenilaian } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Printer, Plus, Upload } from 'lucide-react'
+import { FileText, Printer, Plus, Upload, Pencil } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import AddPesertaModal from './AddPesertaModal'
@@ -26,6 +26,8 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
   const [kategoriList, setKategoriList] = useState<{ id: string; nama: string }[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
+  const [editPeserta, setEditPeserta] = useState<RekapPenilaian | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   
   const supabase = createClient()
 
@@ -382,8 +384,16 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                       </div>
                     </td>
                     <td className="text-right">
-                      {p.jumlah_juri_menilai === 3 && (
-                        <div className="flex gap-2 justify-end">
+                      <div className="flex gap-2 justify-end">
+                        {p.jumlah_juri_menilai === 0 && (
+                          <button 
+                            onClick={() => setEditPeserta(p)}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit
+                          </button>
+                        )}
+                        {p.jumlah_juri_menilai === 3 && (
                           <button 
                             className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                             onClick={() => exportToWord(p)}
@@ -396,8 +406,9 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                           >
                             <Printer className="w-4 h-4" /> PDF
                           </button>
-                        </div>
+                        </>
                       )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -439,6 +450,56 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
             loadData()
           }}
         />
+      )}
+
+      {editPeserta && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white text-slate-900 w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl animate-fade-in-up">
+            <h3 className="font-display text-2xl font-bold text-[var(--color-text)] mb-4">Quick Edit Data</h3>
+            <form onSubmit={async (e) => {
+              e.preventDefault()
+              setIsSaving(true)
+              const payload = {
+                nama: editPeserta.nama_peserta,
+                asal_jemaat: editPeserta.asal_jemaat,
+                nomor_peserta: editPeserta.nomor_peserta || null,
+                nomor_undian: editPeserta.nomor_undian ? parseInt(editPeserta.nomor_undian as any) : null,
+              }
+              const { error } = await supabase.from('peserta').update(payload as any).eq('id', editPeserta.peserta_id)
+              setIsSaving(false)
+              if (error) {
+                showToast('error', 'Gagal mengubah data peserta')
+              } else {
+                showToast('success', 'Data peserta berhasil diubah!')
+                setEditPeserta(null)
+                loadData()
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="form-label">Nama</label>
+                <input required value={editPeserta.nama_peserta} onChange={e => setEditPeserta({...editPeserta, nama_peserta: e.target.value})} className="form-input" />
+              </div>
+              <div>
+                <label className="form-label">Asal Jemaat</label>
+                <input required value={editPeserta.asal_jemaat} onChange={e => setEditPeserta({...editPeserta, asal_jemaat: e.target.value})} className="form-input" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Nomor Peserta</label>
+                  <input value={editPeserta.nomor_peserta || ''} onChange={e => setEditPeserta({...editPeserta, nomor_peserta: e.target.value})} className="form-input" />
+                </div>
+                <div>
+                  <label className="form-label">Nomor Undian</label>
+                  <input type="number" value={editPeserta.nomor_undian || ''} onChange={e => setEditPeserta({...editPeserta, nomor_undian: Number(e.target.value)})} className="form-input" />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setEditPeserta(null)} className="btn-secondary">Batal</button>
+                <button type="submit" disabled={isSaving} className="btn-primary px-6">{isSaving ? 'Menyimpan...' : 'Simpan'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

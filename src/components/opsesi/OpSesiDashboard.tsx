@@ -130,6 +130,23 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
     showToast('success', 'Peserta berhasil diaktifkan! Semua juri dinotifikasi.')
   }
 
+  async function handleBatalkanTampil() {
+    if (!sesi || !activeEvent || !sesi.peserta_aktif_id) return
+    if (!confirm('Anda yakin ingin membatalkan penampilan ini? Peserta akan dikembalikan ke status Menunggu dan semua draft nilai juri untuk sesi ini akan terhapus.')) return
+    
+    setIsSaving(true)
+    
+    // 1. Delete Sesi (Penilaian will cascade or be orphaned, which is fine for a cancelled session)
+    await supabase.from('sesi').delete().eq('id', sesi.id)
+    
+    // 2. Revert Peserta status
+    await supabase.from('peserta').update({ status: null } as any).eq('id', sesi.peserta_aktif_id)
+    
+    setSesi(null)
+    setIsSaving(false)
+    showToast('success', 'Penampilan berhasil dibatalkan. Peserta kembali ke antrean.')
+  }
+
 
 
   async function handleUpdatePengumuman() {
@@ -273,8 +290,17 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                 </div>
 
                 {!sesi.nilai_dikunci ? (
-                  <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm text-center">
-                    Peserta sedang tampil dan dinilai oleh juri.
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-100 border border-blue-300 rounded-lg text-blue-800 text-sm text-center">
+                      Peserta sedang tampil dan dinilai oleh juri.
+                    </div>
+                    <button 
+                      onClick={handleBatalkanTampil}
+                      disabled={isSaving}
+                      className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+                    >
+                      Batal Panggil (Undo)
+                    </button>
                   </div>
                 ) : (
                   <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-sm text-center">
