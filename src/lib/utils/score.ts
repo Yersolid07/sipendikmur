@@ -13,9 +13,11 @@ export interface ScoreParams {
 
 export function calculateTotalScore({ kriteria, scores, perhatian, catatan_aspek, scale }: ScoreParams): number {
   let sum = 0
+  let baseMax = 0
   
   // Calculate Main Criteria
   for (const k of kriteria) {
+    baseMax += k.max
     const grade = scores[k.key] || 0
     if (grade > 0) {
       sum += (grade / 5) * k.max
@@ -48,10 +50,11 @@ export function calculateTotalScore({ kriteria, scores, perhatian, catatan_aspek
   const rawSum = Math.max(0, sum)
 
   if (scale && scale.max > scale.min) {
-    // rawSum is out of 100 base. Even with bonus, we scale it.
-    // If rawSum exceeds 100, we still cap it to max to strictly follow range limits?
-    // Wait, let's just scale it linearly. We will cap it at `scale.max` in all cases.
-    const scaled = scale.min + (rawSum / 100) * (scale.max - scale.min)
+    // rawSum includes base criteria (max: baseMax) + catatan bonus (max: 10)
+    const maxPossible = baseMax + 10
+    
+    // Scale the rawSum proportionally to the range
+    const scaled = scale.min + (rawSum / maxPossible) * (scale.max - scale.min)
     return Math.min(scaled, scale.max)
   }
 
