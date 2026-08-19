@@ -41,10 +41,11 @@ export async function updateSession(request: NextRequest) {
   const url = request.nextUrl.clone()
   const path = url.pathname
 
-  // Always allow: live display (public), static assets, auth callbacks
+  // Always allow: live display (public), static assets, auth callbacks, and public APIs
   if (
     path.startsWith('/live') ||
     path.startsWith('/api/public/') ||
+    path.startsWith('/api/auth/') ||
     path.startsWith('/auth/callback') ||
     path.startsWith('/_next/') ||
     path.startsWith('/favicon')
