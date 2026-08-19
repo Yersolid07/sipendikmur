@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -8,12 +8,6 @@ interface EventOption {
   id: string
   nama: string
 }
-
-const ROLE_OPTIONS = [
-  { value: 'juri', label: 'Juri (Input Nilai)' },
-  { value: 'op_sesi', label: 'Operator Sesi (Kendali Stage)' },
-  { value: 'op_regis', label: 'Operator Registrasi (Check-in)' },
-]
 
 const PASSWORD_RULES = [
   { test: (p: string) => p.length >= 8, label: 'Minimal 8 karakter' },
@@ -172,12 +166,6 @@ export default function RegisterPage() {
                   ))}
                 </div>
               )}
-            </div>
-            <div>
-              <label className='form-label'>Role (Hak Akses) *</label>
-              <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value })} className='form-input cursor-pointer'>
-                {ROLE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
             </div>
             <div>
               <label className='form-label'>Event (Pilih yang sedang aktif) *</label>
