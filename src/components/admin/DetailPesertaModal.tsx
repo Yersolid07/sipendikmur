@@ -8,7 +8,7 @@ import { calculateTotalScore } from '@/lib/utils/score'
 
 interface DetailPesertaModalProps {
   pesertaId: string
-  sesiId: string
+  sesiId?: string
   pesertaNama: string
   pesertaUndian: number | null
   pesertaMazmur: string | null
@@ -38,6 +38,10 @@ export default function DetailPesertaModal({
 
   useEffect(() => {
     async function loadDetail() {
+      if (!sesiId) {
+        setIsLoading(false)
+        return
+      }
       setIsLoading(true)
       
       // 1. Fetch Penilaian

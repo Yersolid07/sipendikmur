@@ -6,7 +6,8 @@ const createJuriSchema = z.object({
   nama: z.string().min(2, "Nama minimal 2 karakter"),
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(8, "Password minimal 8 karakter"),
-  role: z.enum(['juri', 'op_sesi', 'op_regis', 'ip', 'superadmin']).default('juri')
+  role: z.enum(['juri', 'op_sesi', 'op_regis', 'ip', 'subadmin', 'superadmin']).default('juri'),
+  event_id: z.string().nullable().optional()
 })
 
 export async function POST(request: NextRequest) {
@@ -20,12 +21,12 @@ export async function POST(request: NextRequest) {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, event_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'superadmin') {
-      return NextResponse.json({ error: 'Forbidden: Superadmin only' }, { status: 403 })
+    if (!profile || !['superadmin', 'subadmin'].includes(profile.role)) {
+      return NextResponse.json({ error: 'Forbidden: Superadmin or Subadmin only' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -35,7 +36,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const { nama, email, password, role } = parsed.data
+    const { nama, email, password, role, event_id } = parsed.data
+    
+    // Subadmin restriction: cannot create superadmin or subadmin
+    if (profile.role === 'subadmin' && ['superadmin', 'subadmin'].includes(role)) {
+      return NextResponse.json({ error: 'Forbidden: You cannot create this role' }, { status: 403 })
+    }
     const supabaseAdmin = createAdminSupabaseClient()
 
     // Create auth user
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Upsert profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .upsert({ id: authUser.user.id, nama, email, role, is_active: true })
+      .upsert({ id: authUser.user.id, nama, email, role, event_id: event_id || null, is_active: true })
 
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)

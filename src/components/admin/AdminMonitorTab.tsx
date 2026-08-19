@@ -201,12 +201,13 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
   }
 
   async function handleAjukanVAR(pesertaId: string) {
-    const alasan = prompt('Alasan mengajukan VAR:')
-    if (!alasan) return
+    const alasan = window.prompt('Alasan mengajukan VAR:')
+    if (!alasan?.trim()) return
     const { error } = await supabase.from('var_requests').insert({
-      peserta_id: pesertaId, requested_by: profile.id, requested_role: 'ip', alasan: alasan, status: 'pending'
+      peserta_id: pesertaId, requested_by: profile.id, requested_role: 'ip', alasan: alasan.trim(), status: 'pending'
     } as any)
-    if (!error) alert('VAR berhasil diajukan.')
+    if (!error) alert('VAR berhasil diajukan. Menunggu persetujuan 3 Juri.')
+    else alert('Gagal mengajukan VAR: ' + error.message)
   }
 
   if (!activeEvent) return <div className="panel text-center">Tidak ada event aktif.</div>
@@ -370,10 +371,26 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
       {selectedDetailPeserta && (
         <DetailPesertaModal
           pesertaId={selectedDetailPeserta}
-          sesiId={data.find(d => d.id === selectedDetailPeserta)?.sesi_id}
-          pesertaNama={data.find(d => d.id === selectedDetailPeserta)?.nama || ''}
-          pesertaUndian={data.find(d => d.id === selectedDetailPeserta)?.nomor_urut || null}
-          pesertaMazmur={data.find(d => d.id === selectedDetailPeserta)?.mazmur_bacaan || null}
+          sesiId={
+            selectedDetailPeserta === activePesertaInfo?.id
+              ? activePesertaInfo?.sesi_id
+              : data.find(d => d.id === selectedDetailPeserta)?.sesi_id
+          }
+          pesertaNama={
+            selectedDetailPeserta === activePesertaInfo?.id
+              ? activePesertaInfo?.nama
+              : data.find(d => d.id === selectedDetailPeserta)?.nama || ''
+          }
+          pesertaUndian={
+            selectedDetailPeserta === activePesertaInfo?.id
+              ? activePesertaInfo?.nomor_undian
+              : data.find(d => d.id === selectedDetailPeserta)?.nomor_urut || null
+          }
+          pesertaMazmur={
+            selectedDetailPeserta === activePesertaInfo?.id
+              ? activePesertaInfo?.mazmur_bacaan
+              : data.find(d => d.id === selectedDetailPeserta)?.mazmur_bacaan || null
+          }
           juriList={juriList}
           onClose={() => setSelectedDetailPeserta(null)}
           onAkhiriPenampilan={() => {

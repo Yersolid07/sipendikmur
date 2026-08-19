@@ -23,8 +23,19 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       {/* Header */}
       <div className="panel flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Superadmin Panel</h1>
-          <p className="panel-subtext">God mode. Kelola semua aspek sistem penjurian.</p>
+          <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">
+            {profile.role === 'subadmin' ? 'Panel Sub-Admin' : 'Superadmin Panel'}
+          </h1>
+          <p className="panel-subtext">
+            {profile.role === 'subadmin'
+              ? 'Admin Event. Kelola penjurian event yang ditugaskan kepada Anda.'
+              : 'God mode. Kelola semua aspek sistem penjurian.'}
+          </p>
+          {profile.role === 'subadmin' && (
+            <span className="mt-2 inline-block bg-rose-100 text-rose-700 border border-rose-200 text-xs px-3 py-1 rounded-full font-semibold">
+              🔒 Akses terbatas: 1 Event
+            </span>
+          )}
         </div>
         <div className="flex flex-col items-end">
           <span className="text-sm text-[var(--color-text-muted)]">Event Aktif:</span>
@@ -38,12 +49,12 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
 
       {/* Tabs */}
       <div className="tab-container">
-        {[
+        {([
           { id: 'events', label: 'Event & Lomba', icon: <Trophy className="w-5 h-5" /> },
-          { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
+          profile.role === 'superadmin' && { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
           { id: 'users', label: 'Manajemen Akun', icon: <Users className="w-5 h-5" /> },
-          { id: 'settings', label: 'Pengaturan Global', icon: <Settings className="w-5 h-5" /> },
-        ].map((tab) => (
+          profile.role === 'superadmin' && { id: 'settings', label: 'Pengaturan Global', icon: <Settings className="w-5 h-5" /> },
+        ].filter(Boolean) as { id: string; label: string; icon: React.ReactNode }[]).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
@@ -74,7 +85,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
 
         {activeTab === 'users' && (
           <div className="panel">
-            <UsersTab usersList={usersList} />
+            <UsersTab usersList={usersList} events={events} currentUser={profile} />
           </div>
         )}
 

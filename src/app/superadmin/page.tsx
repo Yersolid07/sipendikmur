@@ -17,19 +17,23 @@ export default async function SuperadminPage() {
     .single()
 
   const profile = profileData as Profile | null
-  if (!profile || profile.role !== 'superadmin') redirect('/login')
+  if (!profile || !['superadmin', 'subadmin'].includes(profile.role)) redirect('/login')
 
   // Get all events
-  const { data: eventsData } = await supabase
-    .from('events')
-    .select('*')
-    .order('created_at', { ascending: false })
+  let eventsQuery = supabase.from('events').select('*').order('created_at', { ascending: false })
+  
+  if (profile.role === 'subadmin' && profile.event_id) {
+    eventsQuery = eventsQuery.eq('id', profile.event_id)
+  }
 
-  // Get all users
-  const { data: usersData } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('nama')
+  const { data: eventsData } = await eventsQuery
+
+  // Get users - subadmin cannot see superadmin accounts
+  let usersQuery = supabase.from('profiles').select('*').order('nama')
+  if (profile.role === 'subadmin') {
+    usersQuery = usersQuery.not('role', 'in', '("superadmin","subadmin")')
+  }
+  const { data: usersData } = await usersQuery
 
   const events = (eventsData ?? []) as Event[]
   const usersList = (usersData ?? []) as Profile[]

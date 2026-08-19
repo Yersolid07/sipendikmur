@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   nama TEXT NOT NULL,
   email TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('superadmin', 'op_regis', 'op_sesi', 'ip', 'juri')),
+  role TEXT NOT NULL CHECK (role IN ('superadmin', 'subadmin', 'op_regis', 'op_sesi', 'ip', 'juri')),
+  event_id UUID REFERENCES public.events(id) ON DELETE SET NULL,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -22,8 +23,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- RLS Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view profiles" ON public.profiles FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Superadmin can update profiles" ON public.profiles FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+CREATE POLICY "Admins can update profiles" ON public.profiles FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin'))
 );
 -- Note: Service role (API) is used to create users.
 
@@ -66,8 +67,8 @@ CREATE TABLE IF NOT EXISTS public.events (
 
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view events" ON public.events FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Superadmin can manage events" ON public.events FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+CREATE POLICY "Admins can manage events" ON public.events FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND (p.role = 'superadmin' OR (p.role = 'subadmin' AND p.event_id = events.id)))
 );
 
 -- ============================================================
@@ -93,8 +94,8 @@ CREATE TABLE IF NOT EXISTS public.kategori (
 
 ALTER TABLE public.kategori ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view kategori" ON public.kategori FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "Superadmin can manage kategori" ON public.kategori FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+CREATE POLICY "Admins can manage kategori" ON public.kategori FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND (p.role = 'superadmin' OR (p.role = 'subadmin' AND p.event_id = kategori.event_id)))
 );
 
 -- ============================================================
@@ -120,7 +121,7 @@ ALTER TABLE public.peserta ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view peserta" ON public.peserta FOR SELECT USING (auth.uid() IS NOT NULL);
 -- Update dibolehkan untuk Superadmin, OpRegis, OpSesi, IP
 CREATE POLICY "Operators can manage peserta" ON public.peserta FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'op_regis', 'op_sesi', 'ip'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin', 'op_regis', 'op_sesi', 'ip'))
 );
 
 -- ============================================================
@@ -142,8 +143,8 @@ CREATE TABLE IF NOT EXISTS public.sesi (
 
 ALTER TABLE public.sesi ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view sesi" ON public.sesi FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "OpSesi, IP, Superadmin can manage sesi" ON public.sesi FOR ALL USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'op_sesi', 'ip'))
+CREATE POLICY "OpSesi, IP, Admins can manage sesi" ON public.sesi FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin', 'op_sesi', 'ip'))
 );
 
 -- ============================================================
@@ -181,7 +182,7 @@ CREATE TABLE IF NOT EXISTS public.penilaian (
 ALTER TABLE public.penilaian ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Juri can view and insert their own penilaian" ON public.penilaian FOR ALL USING (
   juri_id = auth.uid() OR 
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'ip'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin', 'ip'))
 );
 
 -- ============================================================
@@ -209,10 +210,10 @@ CREATE TABLE IF NOT EXISTS public.var_requests (
 ALTER TABLE public.var_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view VAR" ON public.var_requests FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Juri and IP can insert VAR" ON public.var_requests FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin', 'subadmin'))
 );
-CREATE POLICY "Juri, IP and Superadmin can update VAR" ON public.var_requests FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin'))
+CREATE POLICY "Juri, IP and Admins can update VAR" ON public.var_requests FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('juri', 'ip', 'superadmin', 'subadmin'))
 );
 
 
@@ -230,8 +231,8 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
 );
 
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Only Superadmin can view logs" ON public.activity_logs FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'superadmin')
+CREATE POLICY "Admins can view logs" ON public.activity_logs FOR SELECT USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin'))
 );
 CREATE POLICY "System can insert logs" ON public.activity_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 

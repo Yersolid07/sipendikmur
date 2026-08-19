@@ -14,27 +14,30 @@ export type Database = {
           id: string
           nama: string
           email: string
-          role: 'superadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
+          role: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active: boolean
           created_at: string
           updated_at: string
+          event_id: string | null
         }
         Insert: {
           id: string
           nama: string
           email: string
-          role: 'superadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
+          role: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active?: boolean
           created_at?: string
           updated_at?: string
+          event_id?: string | null
         }
         Update: {
           id?: string
           nama?: string
           email?: string
-          role?: 'superadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
+          role?: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active?: boolean
           updated_at?: string
+          event_id?: string | null
         }
         Relationships: []
       }

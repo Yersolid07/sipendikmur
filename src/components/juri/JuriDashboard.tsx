@@ -32,6 +32,12 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
   
   const [pendingVar, setPendingVar] = useState<any | null>(null)
   const [hasApprovedVar, setHasApprovedVar] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null)
+
+  function showToast(type: 'success' | 'error' | 'info', msg: string) {
+    setToast({ type, msg })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const supabase = createClient()
 
@@ -110,7 +116,9 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
       if (update.approved_by_juri_3) {
         update.status = 'approved'
         update.resolved_at = new Date().toISOString()
-        alert('VAR berhasil disetujui penuh oleh 3 Juri!')
+        showToast('success', 'VAR berhasil disetujui penuh oleh 3 Juri!')
+      } else {
+        showToast('info', 'Persetujuan Anda tercatat. Menunggu juri lain...')
       }
       await supabase.from('var_requests').update(update).eq('id', pendingVar.id)
     }
@@ -121,7 +129,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
     if (!pendingVar) return
     await supabase.from('var_requests').update({ status: 'rejected', resolved_at: new Date().toISOString() }).eq('id', pendingVar.id)
     setPendingVar(null)
-    alert('VAR ditolak.')
+    showToast('error', 'VAR ditolak.')
   }
 
   if (!activeEvent) {
@@ -271,6 +279,13 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className={`toast z-[300] ${toast.type === 'success' ? 'toast-success' : toast.type === 'error' ? 'toast-error' : 'bg-blue-600 text-white'}`}>
+          {toast.type === 'success' ? '✓' : toast.type === 'error' ? '⚠' : 'ℹ'} {toast.msg}
         </div>
       )}
     </div>

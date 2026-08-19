@@ -461,7 +461,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
           <div className="bg-slate-50 text-slate-900 w-full max-w-lg rounded-3xl p-6 md:p-8 animate-fade-in-up shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-6">
               <h3 className="font-display text-2xl font-bold text-amber-900 capitalize">
-                {activeModal}
+                {KRITERIA.find(k => k.key === activeModal)?.label ?? activeModal}
               </h3>
               <button 
                 onClick={() => setActiveModal(null)}
@@ -624,7 +624,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
         <div className="bg-[var(--color-cream-1)] border border-amber-500/30 rounded-3xl p-6 mt-8 shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
             <div className="text-[var(--color-text-muted)] text-sm font-medium">
-              {KRITERIA.filter(k => scores[k.key] > 0).length + 2} dari {KRITERIA.length + 2} kriteria dinilai
+              {KRITERIA.filter(k => scores[k.key] > 0).length} dari {KRITERIA.length} kriteria dinilai
               <div className="flex gap-2 mt-2">
                 <button onClick={handleSaveDraft} className="text-xs text-amber-700 hover:text-amber-900 border border-amber-300 bg-amber-50 rounded-lg px-3 py-1">
                   💾 Simpan Draft

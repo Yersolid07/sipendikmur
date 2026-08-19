@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Profile } from '@/types/database'
+import { Profile, Event } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X, Eye, EyeOff } from 'lucide-react'
 
-export default function UsersTab({ usersList: initialUsers }: { usersList: Profile[] }) {
+export default function UsersTab({ usersList: initialUsers, events, currentUser }: { usersList: Profile[], events: Event[], currentUser: Profile }) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
   const [showForm, setShowForm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -13,7 +13,8 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
   
   const [nama, setNama] = useState('')
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState<'superadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'>('juri')
+  const [role, setRole] = useState<'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'>('juri')
+  const [eventId, setEventId] = useState<string>('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   
@@ -57,6 +58,7 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
     setEmail('')
     setPassword('')
     setRole('juri')
+    setEventId('')
   }
 
   function handleEdit(user: Profile) {
@@ -83,10 +85,17 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
       }
     } else {
       // Call API to create user using service role
+      const payload = {
+        nama,
+        email,
+        password,
+        role,
+        event_id: role === 'subadmin' ? eventId : null
+      }
       const res = await fetch('/api/admin/create-juri', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nama, email, password, role }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
@@ -107,6 +116,7 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
 
   const roleStyles: Record<string, string> = {
     superadmin: 'bg-red-100 text-red-700 border-red-200',
+    subadmin: 'bg-rose-100 text-rose-700 border-rose-200',
     ip: 'bg-orange-100 text-orange-700 border-orange-200',
     op_sesi: 'bg-green-100 text-green-700 border-green-200',
     op_regis: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -156,13 +166,29 @@ export default function UsersTab({ usersList: initialUsers }: { usersList: Profi
             <div>
               <label className="form-label text-sm">Role (Hak Akses) *</label>
               <select value={role} onChange={e => setRole(e.target.value as any)} className="form-input cursor-pointer bg-white">
-                <option value="superadmin">Super Admin (Akses Penuh)</option>
+                {currentUser.role === 'superadmin' && (
+                  <>
+                    <option value="superadmin">Super Admin (Akses Penuh)</option>
+                    <option value="subadmin">Sub Admin (Khusus 1 Event)</option>
+                  </>
+                )}
                 <option value="ip">Inspektur Pertandingan (Monitor & Kunci Nilai)</option>
                 <option value="op_sesi">Operator Sesi (Kendali Stage)</option>
                 <option value="op_regis">Operator Registrasi (Check-in)</option>
                 <option value="juri">Juri (Input Nilai)</option>
               </select>
             </div>
+            {role === 'subadmin' && currentUser.role === 'superadmin' && !editId && (
+              <div>
+                <label className="form-label text-sm">Pilih Event (Wajib) *</label>
+                <select value={eventId} onChange={e => setEventId(e.target.value)} required className="form-input cursor-pointer bg-white">
+                  <option value="" disabled>-- Pilih Event --</option>
+                  {events.map(ev => (
+                    <option key={ev.id} value={ev.id}>{ev.nama}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="form-label text-sm">Password {!editId && '*'}</label>
               <div className="relative">

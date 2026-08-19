@@ -55,6 +55,7 @@ export default function Navbar({ profile }: Props) {
 
   const roleLabel = {
     superadmin: 'Super Admin',
+    subadmin: 'Sub Admin',
     op_regis: 'Operator Registrasi',
     op_sesi: 'Operator Sesi',
     ip: 'Inspektur Pertandingan',
@@ -63,6 +64,7 @@ export default function Navbar({ profile }: Props) {
 
   const roleBadgeClass = {
     superadmin: 'badge-error',
+    subadmin: 'badge-warning',
     op_regis: 'badge-info',
     op_sesi: 'badge-success',
     ip: 'badge-warning',
