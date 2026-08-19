@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, KeyRound, Mail, ArrowLeft, Send } from 'lucide-react'
 
-export default function LoginPage() {
+function LoginInner() {
+  const searchParams = useSearchParams()
+  const inactiveReason = searchParams.get('reason') === 'inactive'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(inactiveReason ? 'Akun Anda belum diaktivasi atau telah dinonaktifkan. Hubungi Admin Event.' : '')
   const [success, setSuccess] = useState('')
   const [isPending, setIsPending] = useState(false)
   
@@ -56,7 +60,7 @@ export default function LoginPage() {
       // Using window.location.href ensures the browser makes a fresh server request
       // with the newly set auth cookies, bypassing Next.js router caching entirely.
       const role = profileData?.role
-      if (role === 'superadmin') window.location.href = '/superadmin'
+      if (role === 'superadmin' || role === 'subadmin') window.location.href = '/superadmin'
       else if (role === 'ip') window.location.href = '/admin'
       else if (role === 'op_regis') window.location.href = '/op-regis'
       else if (role === 'op_sesi') window.location.href = '/op-sesi'
@@ -273,5 +277,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   )
 }
