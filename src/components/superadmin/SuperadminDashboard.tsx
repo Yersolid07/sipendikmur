@@ -16,7 +16,7 @@ interface Props {
 
 export default function SuperadminDashboard({ profile, events, usersList }: Props) {
   const [activeTab, setActiveTab] = useState<'events' | 'kategori' | 'users' | 'settings'>('events')
-  const activeEvent = events.find((e) => e.status === 'aktif')
+  const activeEvent = profile.role === 'subadmin' ? events[0] : events.find((e) => e.status === 'aktif')
 
   return (
     <div className="space-y-6">
@@ -51,7 +51,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       <div className="tab-container">
         {([
           { id: 'events', label: 'Event & Lomba', icon: <Trophy className="w-5 h-5" /> },
-          profile.role === 'superadmin' && { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
+          { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
           { id: 'users', label: 'Manajemen Akun', icon: <Users className="w-5 h-5" /> },
           profile.role === 'superadmin' && { id: 'settings', label: 'Pengaturan Global', icon: <Settings className="w-5 h-5" /> },
         ].filter(Boolean) as { id: string; label: string; icon: React.ReactNode }[]).map((tab) => (
@@ -73,7 +73,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
         {activeTab === 'events' && (
           <div className="panel">
             <h2 className="panel-header">Manajemen Event</h2>
-            <AdminEventTab events={events} />
+            <AdminEventTab events={events} role={profile.role} />
           </div>
         )}
 

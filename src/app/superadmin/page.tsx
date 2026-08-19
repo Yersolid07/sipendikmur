@@ -28,10 +28,12 @@ export default async function SuperadminPage() {
 
   const { data: eventsData } = await eventsQuery
 
-  // Get users - subadmin cannot see superadmin accounts
+  // Get users - subadmin cannot see superadmin accounts and can only see users for their event
   let usersQuery = supabase.from('profiles').select('*').order('nama')
   if (profile.role === 'subadmin') {
-    usersQuery = usersQuery.not('role', 'in', '("superadmin","subadmin")')
+    usersQuery = usersQuery
+      .not('role', 'in', '("superadmin","subadmin")')
+      .eq('event_id', profile.event_id)
   }
   const { data: usersData } = await usersQuery
 

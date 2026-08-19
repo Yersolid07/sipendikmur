@@ -7,9 +7,10 @@ import { Calendar, Pencil, MapPin } from 'lucide-react'
 
 interface Props {
   events: Event[]
+  role?: string
 }
 
-export default function AdminEventTab({ events: initialEvents }: Props) {
+export default function AdminEventTab({ events: initialEvents, role }: Props) {
   const [events, setEvents] = useState(initialEvents)
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -85,12 +86,14 @@ export default function AdminEventTab({ events: initialEvents }: Props) {
           </h3>
           <p className="text-xs text-[var(--color-text-muted)]">{events.length} event tercatat</p>
         </div>
-        <button
-          onClick={() => { setEditId(null); setForm({ nama: '', deskripsi: '', tanggal: '', lokasi: '' }); setShowForm(true) }}
-          className="btn-primary"
-        >
-          + Buat Event Baru
-        </button>
+        {role !== 'subadmin' && (
+          <button
+            onClick={() => { setEditId(null); setForm({ nama: '', deskripsi: '', tanggal: '', lokasi: '' }); setShowForm(true) }}
+            className="btn-primary"
+          >
+            + Buat Event Baru
+          </button>
+        )}
       </div>
 
       {/* Form */}
