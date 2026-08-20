@@ -111,7 +111,7 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
 
     const mapped = (rows ?? []).map((r: any) => ({
       id: r.id,
-      nomor_urut: r.nomor_undian || 0,
+      nomor_urut: r.nomor_undian || '-',
       nama: r.nama,
       kategori_nama: r.kategori?.nama || '-',
       mazmur_bacaan: r.mazmur_bacaan || '-',
@@ -267,16 +267,11 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
                     {/* VAR Indicator */}
                   </td>
                   <td className="py-4 px-4 text-right flex items-center justify-end gap-2">
-                    {r.status === 'dinilai' && (
-                      <>
+                      {r.status === 'dinilai' && r.sesi_id && (
                         <button onClick={() => handleAjukanVAR(r.id)} className="bg-pink-600 hover:bg-pink-700 text-white text-xs px-4 py-2 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
                           <AlertTriangle className="w-3.5 h-3.5" /> Ajukan VAR
                         </button>
-                        <button onClick={() => handleAkhiriPenampilan(r.id, r.sesi_id)} className="bg-[#b31b26] hover:bg-[#8f151e] text-white text-xs px-4 py-2 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
-                          <Lock className="w-3.5 h-3.5" /> Akhiri & Finalkan
-                        </button>
-                      </>
-                    )}
+                      )}
                     <button onClick={() => setSelectedDetailPeserta(r.id)} className="bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 text-xs px-4 py-1.5 rounded-lg font-semibold flex items-center gap-1 shadow-sm transition-colors">
                       <Eye className="w-3.5 h-3.5" /> Detail
                     </button>
@@ -394,8 +389,7 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
           juriList={juriList}
           onClose={() => setSelectedDetailPeserta(null)}
           onAkhiriPenampilan={() => {
-            const row = data.find(d => d.id === selectedDetailPeserta);
-            if (row) handleAkhiriPenampilan(row.id, row.sesi_id);
+            loadData();
           }}
           currentUser={profile}
           currentUserRole={profile.role}

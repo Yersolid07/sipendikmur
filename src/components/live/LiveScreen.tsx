@@ -118,6 +118,13 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
   }, [revealStage, juriScores.length])
 
   useEffect(() => {
+    // Fallback polling
+    const interval = setInterval(() => {
+      loadSesi()
+      loadScore()
+      loadEvent()
+    }, 5000)
+
     const channel = supabase.channel('realtime_live_screen')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sesi' }, () => {
         loadSesi()
@@ -131,6 +138,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
       .subscribe()
 
     return () => {
+      clearInterval(interval)
       supabase.removeChannel(channel)
     }
   }, [loadSesi, loadScore, supabase])

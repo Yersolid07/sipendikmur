@@ -251,6 +251,11 @@ export default function TabPenilaian({ profile, sesi, activeEvent, isJeda }: Pro
     }
 
     fetchProgressAndVar()
+    
+    // Fallback Auto-Refresh (Polling) every 3 seconds to ensure real-time UI without relying solely on WebSockets
+    const interval = setInterval(() => {
+      fetchProgressAndVar()
+    }, 3000)
 
     const channel = supabase.channel('juri_progress')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'penilaian', filter: `peserta_id=eq.${sesi.peserta_aktif_id}` }, () => fetchProgressAndVar())
@@ -258,6 +263,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent, isJeda }: Pro
       .subscribe()
 
     return () => {
+      clearInterval(interval)
       supabase.removeChannel(channel)
     }
   }, [sesi?.peserta_aktif_id, existingPenilaian, profile.id, isSubmitted, supabase])

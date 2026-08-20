@@ -45,8 +45,8 @@ export default function DetailPesertaModal({
   const supabase = createClient()
 
   useEffect(() => {
-    async function loadDetail() {
-      setIsLoading(true)
+    async function loadDetail(isPolling = false) {
+      if (!isPolling) setIsLoading(true)
       let currentSesiId = sesiId
       
       // 1. Fetch Penilaian by pesertaId only (since a peserta only performs once)
@@ -120,19 +120,25 @@ export default function DetailPesertaModal({
     }
 
     loadDetail()
+    
+    // Auto-refresh polling every 3 seconds
+    const interval = setInterval(() => {
+      loadDetail(true)
+    }, 3000)
 
     // Realtime subscription for penilaian updates
     const channel = supabase.channel(`detail_${pesertaId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'penilaian', filter: `peserta_id=eq.${pesertaId}` }, () => {
         // Reload all when a change occurs
-        loadDetail()
+        loadDetail(true)
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'var_requests', filter: `peserta_id=eq.${pesertaId}` }, () => {
-        loadDetail()
+        loadDetail(true)
       })
       .subscribe()
 
     return () => {
+      clearInterval(interval)
       supabase.removeChannel(channel)
     }
   }, [pesertaId, sesiId, supabase])
@@ -577,21 +583,35 @@ export default function DetailPesertaModal({
                   )
                 )}
 
-                <button
-                  onClick={async () => {
-                    const submittedScores = juriScores.filter(j => j.isSubmitted).map(j => j.totalScore);
-                    const finalScore = submittedScores.length > 0 
-                      ? (submittedScores.reduce((acc, curr) => acc + curr, 0) / submittedScores.length)
-                      : 0;
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm('Akhiri & Finalkan penampilan peserta ini?')) return;
+                      setIsSaving(true);
                       
-                    await supabase
-                      .from('peserta')
-                      .update({ nilai_akhir: finalScore } as any)
-                      .eq('id', pesertaId)
+                      const submittedScores = juriScores.filter(j => j.isSubmitted).map(j => j.totalScore);
+                      const finalScore = submittedScores.length > 0 
+                        ? (submittedScores.reduce((acc, curr) => acc + curr, 0) / submittedScores.length)
+                        : 0;
+                        
+                      // 1. Update Peserta
+                      await supabase
+                        .from('peserta')
+                        .update({ nilai_akhir: finalScore, status: 'selesai' } as any)
+                        .eq('id', pesertaId)
 
-                    onAkhiriPenampilan()
-                    onClose()
-                  }}
+                      // 2. Update Sesi 
+                      const targetSesiId = sesiId || sesiData?.id;
+                      if (targetSesiId) {
+                        await supabase
+                          .from('sesi')
+                          .update({ nilai_dikunci: true, status: 'selesai' } as any)
+                          .eq('id', targetSesiId)
+                      }
+  
+                      setIsSaving(false);
+                      onAkhiriPenampilan()
+                      onClose()
+                    }}
                   disabled={isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))}
                   className={`flex items-center gap-2 py-2.5 px-6 rounded-xl font-bold transition-all shadow-md active:scale-95 ${
                     isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))
