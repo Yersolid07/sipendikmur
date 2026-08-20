@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Event, Setting, Sesi } from '@/types/database'
+import LeaderboardView from './LeaderboardView'
 
 type ActiveSesi = Sesi & {
   peserta: { id: string; nama: string; mazmur_bacaan: string | null; asal_jemaat: string } | null
@@ -41,6 +42,7 @@ function SlotCounter({ value, duration = 2000, isAnimating }: { value: number, d
 }
 
 export default function LiveScreen({ activeEvent, settings, initialSesi }: Props) {
+  const [currentEvent, setCurrentEvent] = useState<Event | null>(activeEvent)
   const [sesi, setSesi] = useState<ActiveSesi | null>(initialSesi)
   const [finalScore, setFinalScore] = useState<number | null>(null)
   const [juriScores, setJuriScores] = useState<any[]>([])
@@ -72,18 +74,28 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
   }, [sesi?.nilai_dikunci, sesi?.peserta_aktif_id, supabase])
 
   const loadSesi = useCallback(async () => {
-    if (!activeEvent) return
+    if (!currentEvent) return
     const { data } = await supabase
       .from('sesi')
       .select('*, peserta:peserta_aktif_id(id, nama, mazmur_bacaan, asal_jemaat), kategori:kategori_id(id, nama, jenis_lomba)')
-      .eq('event_id', activeEvent.id)
+      .eq('event_id', currentEvent.id)
       .neq('status', 'selesai')
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
       
     setSesi((data as unknown as ActiveSesi) || null)
-  }, [activeEvent, supabase])
+  }, [currentEvent, supabase])
+
+  const loadEvent = useCallback(async () => {
+    if (!currentEvent) return
+    const { data } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', currentEvent.id)
+      .single()
+    if (data) setCurrentEvent(data as Event)
+  }, [currentEvent?.id, supabase])
 
   useEffect(() => {
     loadScore()
@@ -112,6 +124,9 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'peserta' }, () => {
         loadScore()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
+        loadEvent()
       })
       .subscribe()
 
@@ -144,7 +159,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
             <h1 className="text-3xl font-display font-bold text-gold-gradient tracking-wide uppercase">
               {settings?.nama_penyelenggara || 'Sistem Penjurian GMIM'}
             </h1>
-            {activeEvent && <p className="text-xl text-slate-400 mt-1">{activeEvent.nama}</p>}
+            {currentEvent && <p className="text-xl text-slate-400 mt-1">{currentEvent.nama}</p>}
           </div>
         </div>
         <div className="text-right">
@@ -159,7 +174,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-8 animate-fade-in-up z-10">
-        {!activeEvent ? (
+        {!currentEvent ? (
           <div className="text-center">
             <div className="inline-block p-1 rounded-full bg-gradient-to-r from-amber-500/20 to-blue-500/20 mb-8">
               <div className="px-8 py-3 rounded-full bg-slate-900/80 backdrop-blur-sm border border-slate-700/50">
@@ -170,6 +185,8 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
               Menunggu Event Dimulai...
             </h2>
           </div>
+        ) : currentEvent?.live_settings?.show_leaderboard ? (
+          <LeaderboardView eventId={currentEvent.id} sortBy={currentEvent.live_settings?.sort_by || 'kategori'} />
         ) : sesi?.peserta ? (
           <div className={`text-center transition-all duration-1000 w-full max-w-5xl ${revealStage > 0 ? 'space-y-4 transform -translate-y-4 scale-90' : 'space-y-8'}`}>
             <div className="inline-block px-6 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 text-amber-400 font-semibold tracking-widest uppercase mb-4">

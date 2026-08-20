@@ -84,6 +84,7 @@ export type Database = {
           tanggal: string | null
           lokasi: string | null
           status: 'aktif' | 'selesai' | 'draft'
+          live_settings: { show_leaderboard: boolean; sort_by: string } | null
           created_at: string
           updated_at: string
         }
@@ -94,6 +95,7 @@ export type Database = {
           tanggal?: string | null
           lokasi?: string | null
           status?: 'aktif' | 'selesai' | 'draft'
+          live_settings?: { show_leaderboard: boolean; sort_by: string } | null
           created_at?: string
           updated_at?: string
         }
@@ -104,6 +106,7 @@ export type Database = {
           tanggal?: string | null
           lokasi?: string | null
           status?: 'aktif' | 'selesai' | 'draft'
+          live_settings?: { show_leaderboard: boolean; sort_by: string } | null
           updated_at?: string
         }
         Relationships: []
@@ -181,6 +184,7 @@ export type Database = {
           status: 'menunggu' | 'bersiap' | 'tampil' | 'dinilai' | 'selesai'
           potongan_nilai: number
           keterangan_potongan: string | null
+          nilai_akhir: number | null
           created_at: string
           updated_at: string
         }
@@ -197,6 +201,7 @@ export type Database = {
           status?: 'menunggu' | 'bersiap' | 'tampil' | 'dinilai' | 'selesai'
           potongan_nilai?: number
           keterangan_potongan?: string | null
+          nilai_akhir?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -213,6 +218,7 @@ export type Database = {
           status?: 'menunggu' | 'bersiap' | 'tampil' | 'dinilai' | 'selesai'
           potongan_nilai?: number
           keterangan_potongan?: string | null
+          nilai_akhir?: number | null
           updated_at?: string
         }
         Relationships: [

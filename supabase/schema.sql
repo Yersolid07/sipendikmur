@@ -61,12 +61,14 @@ CREATE TABLE IF NOT EXISTS public.events (
   tanggal DATE,
   lokasi TEXT,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('aktif', 'selesai', 'draft')),
+  live_settings JSONB DEFAULT '{"show_leaderboard": false, "sort_by": "kategori"}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view events" ON public.events FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Public can view active events" ON public.events FOR SELECT USING (status = 'aktif');
 CREATE POLICY "Admins can manage events" ON public.events FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND (p.role = 'superadmin' OR (p.role = 'subadmin' AND p.event_id = events.id)))
 );
@@ -94,6 +96,7 @@ CREATE TABLE IF NOT EXISTS public.kategori (
 
 ALTER TABLE public.kategori ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view kategori" ON public.kategori FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Public can view kategori" ON public.kategori FOR SELECT USING (true);
 CREATE POLICY "Admins can manage kategori" ON public.kategori FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND (p.role = 'superadmin' OR (p.role = 'subadmin' AND p.event_id = kategori.event_id)))
 );
@@ -113,12 +116,14 @@ CREATE TABLE IF NOT EXISTS public.peserta (
   status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'bersiap', 'tampil', 'dinilai', 'selesai')),
   potongan_nilai DECIMAL(5,2) DEFAULT 0.00,
   keterangan_potongan TEXT,
+  nilai_akhir DECIMAL(8,3) DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.peserta ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "All authenticated can view peserta" ON public.peserta FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Public can view peserta" ON public.peserta FOR SELECT USING (true);
 -- Update dibolehkan untuk Superadmin, OpRegis, OpSesi, IP
 CREATE POLICY "Operators can manage peserta" ON public.peserta FOR ALL USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('superadmin', 'subadmin', 'op_regis', 'op_sesi', 'ip'))
@@ -279,52 +284,13 @@ SELECT
     END 
   AS DECIMAL(10,2)) as avg_total,
   
-  -- Nilai Akhir (setelah dikurangi rata-rata potongan perhatian Juri dan potongan pusat IP/Superadmin)
-  CAST(
-    (CASE WHEN k.jenis_lomba = 'perorangan' THEN
-      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + 
-      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + 
-      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + 
-      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
-    ELSE
-      ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) +
-      ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) +
-      ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) +
-      ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
-      ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
-    END) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
-  AS DECIMAL(10,3)) as nilai_akhir_raw,
+  -- Nilai Akhir diambil dari tabel peserta yang sudah dikalkulasi akurat oleh sistem (termasuk JSON catatan_aspek)
+  p.nilai_akhir,
   
-  -- Nilai Akhir (Scaled)
-  CAST(
-    COALESCE(k.range_min, 0) + (
-      (
-        CASE WHEN k.jenis_lomba = 'perorangan' THEN
-          ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + 
-          ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + 
-          ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + 
-          ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
-        ELSE
-          ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) +
-          ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) +
-          ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) +
-          ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) +
-          ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
-        END
-      ) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
-    ) / 100.0 * (COALESCE(k.range_max, 100) - COALESCE(k.range_min, 0))
-  AS DECIMAL(10,3)) as nilai_akhir,
-
   -- Ranking dalam kategori yang sama
   RANK() OVER (
     PARTITION BY k.id 
-    ORDER BY (
-      (CASE WHEN k.jenis_lomba = 'perorangan' THEN
-        ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 35)) + ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 30)) + ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 25)) + ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 10))
-      ELSE
-        ((COALESCE(AVG(n.kekompakan), 0) / 5) * COALESCE(k.maks_kekompakan, 30)) + ((COALESCE(AVG(n.penghayatan), 0) / 5) * COALESCE(k.maks_penghayatan, 25)) + ((COALESCE(AVG(n.interpretasi), 0) / 5) * COALESCE(k.maks_interpretasi, 20)) + ((COALESCE(AVG(n.artikulasi), 0) / 5) * COALESCE(k.maks_artikulasi, 20)) + ((COALESCE(AVG(n.penampilan), 0) / 5) * COALESCE(k.maks_penampilan, 5))
-      END) - COALESCE(AVG(n.potongan_perhatian), 0) - COALESCE(p.potongan_nilai, 0)
-    ) DESC
+    ORDER BY p.nilai_akhir DESC NULLS LAST
   ) as ranking
 
 FROM public.peserta p

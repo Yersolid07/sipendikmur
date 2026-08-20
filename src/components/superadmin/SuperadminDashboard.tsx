@@ -7,7 +7,8 @@ import KategoriTab from './KategoriTab'
 import UsersTab from './UsersTab'
 import SettingsTab from './SettingsTab'
 import KontrolLombaTab from './KontrolLombaTab'
-import { Trophy, ClipboardList, Users, Settings, MonitorPlay } from 'lucide-react'
+import RekapLiveBoardTab from './RekapLiveBoardTab'
+import { Trophy, ClipboardList, Users, Settings, MonitorPlay, BarChart2 } from 'lucide-react'
 
 interface Props {
   profile: Profile
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export default function SuperadminDashboard({ profile, events, usersList }: Props) {
-  const [activeTab, setActiveTab] = useState<'kontrol' | 'events' | 'kategori' | 'users' | 'settings'>('kontrol')
+  const [activeTab, setActiveTab] = useState<'kontrol' | 'rekap-live' | 'events' | 'kategori' | 'users' | 'settings'>('kontrol')
   
   // By default, select the subadmin's assigned event OR the first active event (or just the first event if none active)
   const defaultEventId = profile.role === 'subadmin' 
@@ -73,9 +74,10 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       </div>
 
       {/* Tabs */}
-      <div className="tab-container">
+      <div className="tab-container flex overflow-x-auto whitespace-nowrap scrollbar-hide py-2">
         {([
           { id: 'kontrol', label: 'Kontrol Lomba', icon: <MonitorPlay className="w-5 h-5" /> },
+          { id: 'rekap-live', label: 'Rekap & Live Board', icon: <BarChart2 className="w-5 h-5" /> },
           { id: 'events', label: 'Event & Lomba', icon: <Trophy className="w-5 h-5" /> },
           { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
           { id: 'users', label: 'Manajemen Akun', icon: <Users className="w-5 h-5" /> },
@@ -123,6 +125,10 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
         
         {activeTab === 'kontrol' && activeEvent && (
           <KontrolLombaTab activeEvent={activeEvent} />
+        )}
+        
+        {activeTab === 'rekap-live' && activeEvent && (
+          <RekapLiveBoardTab activeEvent={activeEvent} />
         )}
       </div>
     </div>

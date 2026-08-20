@@ -367,6 +367,16 @@ export default function DetailPesertaModal({
                           </tr>
                         ))}
                       </tbody>
+                      <tfoot className="border-t-2 border-slate-200">
+                        <tr>
+                          <td className="py-3 font-semibold text-slate-800">Nilai Akhir</td>
+                          <td className="py-3 text-right text-[#8b252d] font-bold text-xl">
+                            {(juriScores.length > 0 && juriScores.every(j => j.isSubmitted))
+                              ? (juriScores.reduce((acc, curr) => acc + curr.totalScore, 0) / juriScores.length).toFixed(3)
+                              : '-'}
+                          </td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                 </div>
@@ -455,7 +465,19 @@ export default function DetailPesertaModal({
           </div>
           <div className="flex gap-3">
             <button 
-              onClick={() => {
+              onClick={async () => {
+                // Calculate final score before saving
+                const submittedScores = juriScores.filter(j => j.isSubmitted).map(j => j.totalScore);
+                const finalScore = submittedScores.length > 0 
+                  ? (submittedScores.reduce((acc, curr) => acc + curr, 0) / submittedScores.length)
+                  : 0;
+                  
+                // Save nilai akhir to database
+                await supabase
+                  .from('peserta')
+                  .update({ nilai_akhir: finalScore } as any)
+                  .eq('id', pesertaId)
+
                 onAkhiriPenampilan()
                 onClose()
               }}
