@@ -25,7 +25,9 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
   
   const activeEvent = eventIdParam 
     ? events.find((e) => e.id === eventIdParam) ?? null 
-    : events.find((e) => e.status === 'aktif') ?? null
+    : (profile.event_id 
+        ? events.find((e) => e.id === profile.event_id) ?? null
+        : events.find((e) => e.status === 'aktif' || e.status === 'jeda') ?? null)
 
   const activeJuries = juriList.filter(j => j.event_id === activeEvent?.id && j.is_juri_penilai)
 

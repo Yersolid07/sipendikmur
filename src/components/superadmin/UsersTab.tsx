@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Profile, Event } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X, Eye, EyeOff } from 'lucide-react'
+import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X, Eye, EyeOff, Trash2 } from 'lucide-react'
 
 export default function UsersTab({ usersList: initialUsers, events, currentUser, selectedEventId }: { usersList: Profile[], events: Event[], currentUser: Profile, selectedEventId?: string }) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
@@ -181,6 +181,28 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser,
     if (error) showToast('error', 'Gagal mengubah status: ' + error.message)
   }
 
+  async function handleDeleteUser(user: Profile) {
+    if (!confirm(`PERINGATAN KRUSIAL: Apakah Anda yakin ingin menghapus akun ${user.nama} secara permanen? Data yang terkait dengan akun ini juga mungkin akan terhapus atau kehilangan referensi (termasuk nilai yang sudah diinput jika ini adalah Juri). Aksi ini tidak dapat dibatalkan!`)) return
+    
+    // Call the delete API endpoint
+    try {
+      const res = await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        showToast('success', 'Akun berhasil dihapus secara permanen!')
+        // Users list will update automatically via realtime subscription
+      } else {
+        showToast('error', data.error || 'Gagal menghapus akun')
+      }
+    } catch (err: any) {
+      showToast('error', 'Terjadi kesalahan sistem saat menghapus akun')
+    }
+  }
+
   const roleStyles: Record<string, string> = {
     superadmin: 'bg-red-100 text-red-700 border-red-200',
     subadmin: 'bg-rose-100 text-rose-700 border-rose-200',
@@ -343,14 +365,20 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser,
                         <Pencil className="w-4 h-4" />
                       </button>
                       {currentUser.id !== u.id && (
-                        <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
-                          u.is_active 
-                            ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
-                            : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                        }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-                          {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                          <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
-                        </button>
+                        <>
+                          <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
+                            u.is_active 
+                              ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
+                              : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                          }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
+                            {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
+                          </button>
+                          
+                          <button onClick={() => handleDeleteUser(u)} className="p-1.5 rounded-lg text-rose-500 hover:text-white hover:bg-rose-600 transition-colors" title="Hapus Akun Permanen">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
