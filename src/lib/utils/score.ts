@@ -50,7 +50,8 @@ export function calculateTotalScore({ kriteria, scores, perhatian, catatan_aspek
   const rawSum = Math.max(0, sum + catatanBonus)
 
   if (scale && scale.max > scale.min) {
-    const maxPossible = baseMax
+    // The true maximum possible score includes the 10 points bonus
+    const maxPossible = baseMax + 10
     
     // Scale the rawSum proportionally to the range
     const scaled = scale.min + (rawSum / maxPossible) * (scale.max - scale.min)

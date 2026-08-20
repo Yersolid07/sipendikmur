@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, KeyRound, Mail, ArrowLeft, Send } from 'lucide-react'
 
 function LoginInner() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const inactiveReason = searchParams.get('reason') === 'inactive'
 
@@ -56,15 +57,18 @@ function LoginInner() {
         return
       }
 
-      // Navigate directly to the correct dashboard URL based on role.
-      // Using window.location.href ensures the browser makes a fresh server request
-      // with the newly set auth cookies, bypassing Next.js router caching entirely.
+      // Use router.push and router.refresh to ensure Next.js updates state 
+      // and bypasses aggressive browser caching issues in Chrome.
       const role = profileData?.role
-      if (role === 'superadmin' || role === 'subadmin') window.location.href = '/superadmin'
-      else if (role === 'ip') window.location.href = '/admin'
-      else if (role === 'op_regis') window.location.href = '/op-regis'
-      else if (role === 'op_sesi') window.location.href = '/op-sesi'
-      else window.location.href = '/dashboard'
+      router.refresh() // Tell Next.js to re-evaluate server components with new cookies
+      
+      setTimeout(() => {
+        if (role === 'superadmin' || role === 'subadmin') router.push('/superadmin')
+        else if (role === 'ip') router.push('/admin')
+        else if (role === 'op_regis') router.push('/op-regis')
+        else if (role === 'op_sesi') router.push('/op-sesi')
+        else router.push('/dashboard')
+      }, 100)
 
     } catch (err: any) {
       setError(err.message || 'Terjadi kesalahan')

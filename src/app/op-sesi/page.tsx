@@ -40,7 +40,7 @@ export default async function OpSesiPage({ searchParams }: { searchParams: Promi
     activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)
   }
 
-  const { data: activeEventData } = await activeEventQuery.single()
+  const { data: activeEventData } = await activeEventQuery.maybeSingle()
 
   if (activeEventData?.status === 'selesai' && !['superadmin', 'subadmin'].includes(profile.role)) {
     return (

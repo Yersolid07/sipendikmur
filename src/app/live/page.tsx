@@ -22,7 +22,7 @@ export default async function LivePage({
     .from('settings')
     .select('*')
     .limit(1)
-    .single()
+    .maybeSingle()
 
   // If no event_id, fetch all active events and show a selection screen
   if (!searchParams.event_id) {
@@ -81,7 +81,7 @@ export default async function LivePage({
     .from('events')
     .select('*')
     .eq('id', searchParams.event_id)
-    .single()
+    .maybeSingle()
 
   if (!activeEventData) {
     return (
@@ -103,7 +103,7 @@ export default async function LivePage({
     .neq('status', 'selesai')
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
     
   if (sesiData) activeSesi = sesiData as unknown as ActiveSesi
 

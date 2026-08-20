@@ -39,7 +39,7 @@ export default async function DashboardPage() {
     activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)
   }
 
-  const { data: activeEventData } = await activeEventQuery.single()
+  const { data: activeEventData } = await activeEventQuery.maybeSingle()
 
   if (activeEventData?.status === 'selesai') {
     return (
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
       .in('status', ['berjalan', 'menunggu'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
     if (sesiData) activeSesi = sesiData as unknown as ActiveSesi
   }
 
