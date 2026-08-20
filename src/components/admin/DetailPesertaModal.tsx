@@ -39,32 +39,53 @@ export default function DetailPesertaModal({
 
   useEffect(() => {
     async function loadDetail() {
-      if (!sesiId) {
-        setIsLoading(false)
-        return
-      }
       setIsLoading(true)
+      let currentSesiId = sesiId
       
-      // 1. Fetch Penilaian
+      // 1. Fetch Penilaian by pesertaId only (since a peserta only performs once)
       const { data: pData } = await supabase
         .from('penilaian')
         .select('*')
-        .eq('sesi_id', sesiId)
         .eq('peserta_id', pesertaId)
       
-      if (pData) setPenilaianList(pData)
+      if (pData) {
+        setPenilaianList(pData)
+        if (!currentSesiId && pData.length > 0) {
+          currentSesiId = pData[0].sesi_id
+        }
+      }
 
-      // 2. Fetch Sesi and Peserta Kategori
-      const { data: sData } = await supabase
-        .from('sesi')
-        .select('catatan_ip, kategori_id, kategori(*)')
-        .eq('id', sesiId)
+      // 2. Fetch Peserta to get Kategori
+      const { data: pKategori } = await supabase
+        .from('peserta')
+        .select('kategori_id, kategori(*)')
+        .eq('id', pesertaId)
         .single()
-      
-      if (sData) {
-        setCatatanIp((sData as any).catatan_ip || '')
-        const kat = (sData as any).kategori
+        
+      if (pKategori) {
+        const kat = (pKategori as any).kategori
         setKategori(Array.isArray(kat) ? kat[0] : kat)
+        
+        // If we STILL don't have currentSesiId, find the sesi for this kategori
+        if (!currentSesiId && pKategori.kategori_id) {
+          const { data: sFallback } = await supabase
+            .from('sesi')
+            .select('id')
+            .eq('kategori_id', pKategori.kategori_id)
+            .limit(1)
+            .maybeSingle()
+          if (sFallback) currentSesiId = sFallback.id
+        }
+      }
+
+      // 3. Fetch Catatan IP if we have currentSesiId
+      if (currentSesiId) {
+        const { data: sData } = await supabase
+          .from('sesi')
+          .select('catatan_ip')
+          .eq('id', currentSesiId)
+          .single()
+        if (sData) setCatatanIp((sData as any).catatan_ip || '')
       }
 
       // 3. Fetch pending VAR (ONLY if all juries have submitted)
@@ -108,15 +129,40 @@ export default function DetailPesertaModal({
 
   async function handleSimpanCatatan() {
     setIsSaving(true)
-    // Coba simpan ke kolom catatan_ip jika ada, jika error abaikan (mungkin blm migrate)
-    const { error } = await supabase.from('sesi').update({ catatan_ip: catatanIp } as any).eq('id', sesiId)
-    if (error) {
-       console.error("Gagal menyimpan catatan_ip", error)
-       alert('Gagal menyimpan catatan, pastikan database sudah ter-update.')
-    } else {
-       alert('Catatan berhasil disimpan!')
+    
+    // Attempt to find sesi_id from penilaian or fallback
+    let targetSesiId = sesiId
+    if (!targetSesiId && penilaianList.length > 0) {
+      targetSesiId = penilaianList[0].sesi_id
     }
+    
+    if (!targetSesiId && kategori) {
+      const { data: sFallback } = await supabase
+        .from('sesi')
+        .select('id')
+        .eq('kategori_id', kategori.id)
+        .limit(1)
+        .maybeSingle()
+      if (sFallback) targetSesiId = sFallback.id
+    }
+
+    if (!targetSesiId) {
+      alert('Sesi tidak ditemukan untuk menyimpan catatan.')
+      setIsSaving(false)
+      return
+    }
+
+    const { error } = await supabase
+      .from('sesi')
+      .update({ catatan_ip: catatanIp } as any)
+      .eq('id', targetSesiId)
+      
     setIsSaving(false)
+    if (error) {
+      alert('Gagal menyimpan catatan: ' + error.message)
+    } else {
+      alert('Catatan berhasil disimpan!')
+    }
   }
 
   async function handleBukaKunciVAR() {
@@ -127,7 +173,15 @@ export default function DetailPesertaModal({
     await supabase.from('var_requests').update({ status: 'approved', resolved_at: new Date().toISOString() }).eq('id', varRequest.id)
     
     // 2. Unlock ALL juris' penilaian for this sesi
-    await supabase.from('penilaian').update({ is_submitted: false } as any).eq('sesi_id', sesiId).eq('peserta_id', pesertaId)
+    let targetSesiId = sesiId
+    if (!targetSesiId && penilaianList.length > 0) targetSesiId = penilaianList[0].sesi_id
+
+    if (targetSesiId) {
+      await supabase.from('penilaian').update({ is_submitted: false } as any).eq('sesi_id', targetSesiId).eq('peserta_id', pesertaId)
+    } else {
+      // Fallback if somehow sesiId is not found (though very unlikely if var request exists)
+      await supabase.from('penilaian').update({ is_submitted: false } as any).eq('peserta_id', pesertaId)
+    }
     
     setVarRequest(null)
     setHasOpenedVar(true)
