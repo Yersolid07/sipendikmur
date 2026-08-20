@@ -26,14 +26,16 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  // Get all juri profiles
-  const { data: juriData } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('role', 'juri')
-    .order('nama')
+  // Get all juri profiles for Superadmin/Subadmin
+  let juriQuery = supabase.from('profiles').select('*').eq('role', 'juri').order('nama')
+  if (profile.role === 'subadmin' && profile.event_id) {
+    juriQuery = juriQuery.eq('event_id', profile.event_id)
+  }
+  const { data: juriData } = await juriQuery
 
   const events = (eventsData ?? []) as Event[]
+  // For IP/Admin Monitoring, they usually want to see active juries. We pass all to AdminDashboard
+  // and AdminDashboard will filter by activeEvent and is_juri_penilai.
   const juriList = (juriData ?? []) as Profile[]
 
   return (

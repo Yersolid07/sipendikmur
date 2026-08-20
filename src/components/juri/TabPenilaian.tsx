@@ -228,7 +228,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent, isJeda }: Pro
       // 1. Fetch Progress
       const { data } = await supabase.from('penilaian').select('id, is_submitted, juri_id').eq('peserta_id', sesi!.peserta_aktif_id)
       
-      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'juri').eq('event_id', activeEvent.id)
+      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'juri').eq('event_id', activeEvent.id).eq('is_juri_penilai', true)
 
       if (data) {
         setJuriProgress({

@@ -16,6 +16,7 @@ export type Database = {
           email: string
           role: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active: boolean
+          is_juri_penilai: boolean
           created_at: string
           updated_at: string
           event_id: string | null
@@ -26,6 +27,7 @@ export type Database = {
           email: string
           role: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active?: boolean
+          is_juri_penilai?: boolean
           created_at?: string
           updated_at?: string
           event_id?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           email?: string
           role?: 'superadmin' | 'subadmin' | 'op_regis' | 'op_sesi' | 'ip' | 'juri'
           is_active?: boolean
+          is_juri_penilai?: boolean
           updated_at?: string
           event_id?: string | null
         }

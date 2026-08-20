@@ -21,6 +21,8 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
   const [activeTab, setActiveTab] = useState('monitor')
   const activeEvent = events.find((e) => e.status === 'aktif') ?? null
 
+  const activeJuries = juriList.filter(j => j.event_id === activeEvent?.id && j.is_juri_penilai)
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,8 +55,8 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
           color="amber"
         />
         <StatCard
-          label="Total Juri"
-          value={juriList.length}
+          label="Juri Aktif (Menilai)"
+          value={activeJuries.length}
           icon={<Scale className="w-6 h-6 inline" />}
           color="blue"
         />
@@ -91,7 +93,7 @@ export default function AdminDashboard({ profile, events, juriList }: Props) {
       {/* Tab Content */}
       <div className="animate-fade-in-up">
         {activeTab === 'monitor' && (
-          <AdminMonitorTab activeEvent={activeEvent} juriList={juriList} profile={profile} />
+          <AdminMonitorTab activeEvent={activeEvent} juriList={activeJuries} profile={profile} />
         )}
         {activeTab === 'rekap' && (
           <AdminRekapTab activeEvent={activeEvent} />

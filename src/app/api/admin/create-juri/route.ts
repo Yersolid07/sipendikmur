@@ -7,7 +7,8 @@ const createJuriSchema = z.object({
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(8, "Password minimal 8 karakter"),
   role: z.enum(['juri', 'op_sesi', 'op_regis', 'ip', 'subadmin', 'superadmin']).default('juri'),
-  event_id: z.string().nullable().optional()
+  event_id: z.string().nullable().optional(),
+  is_juri_penilai: z.boolean().default(true)
 })
 
 export async function POST(request: NextRequest) {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const { nama, email, password, role, event_id } = parsed.data
+    const { nama, email, password, role, event_id, is_juri_penilai } = parsed.data
     
     // Subadmin restriction: cannot create superadmin or subadmin
     if (profile.role === 'subadmin' && ['superadmin', 'subadmin'].includes(role)) {
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Upsert profile
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .upsert({ id: authUser.user.id, nama, email, role, event_id: event_id || null, is_active: true })
+      .upsert({ id: authUser.user.id, nama, email, role, event_id: event_id || null, is_active: true, is_juri_penilai })
 
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)

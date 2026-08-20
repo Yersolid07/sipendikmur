@@ -17,6 +17,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
   const [eventId, setEventId] = useState<string>('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [isJuriPenilai, setIsJuriPenilai] = useState(true)
   
   const supabase = createClient()
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -63,6 +64,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     setPassword('')
     setRole('juri')
     setEventId('')
+    setIsJuriPenilai(true)
   }
 
   function handleEdit(user: Profile) {
@@ -71,6 +73,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     setEmail(user.email)
     setRole(user.role as any)
     setEventId(user.event_id || '')
+    setIsJuriPenilai(user.is_juri_penilai ?? true)
     setPassword('')
     setShowForm(true)
   }
@@ -81,11 +84,12 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     setIsSaving(true)
 
     if (editId) {
-      // Update existing profile (nama, role, event_id)
+      // Update existing profile (nama, role, event_id, is_juri_penilai)
       const { error } = await supabase.from('profiles').update({ 
         nama, 
         role,
-        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null) 
+        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null),
+        is_juri_penilai: role === 'juri' ? isJuriPenilai : true
       }).eq('id', editId)
       if (error) {
         showToast('error', 'Gagal memperbarui data akun: ' + error.message)
@@ -100,7 +104,8 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
         email,
         password,
         role,
-        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null)
+        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null),
+        is_juri_penilai: role === 'juri' ? isJuriPenilai : true
       }
       const res = await fetch('/api/admin/create-juri', {
         method: 'POST',
@@ -200,6 +205,22 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
                 </select>
               </div>
             )}
+            {role === 'juri' && (
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer mt-8">
+                    <input 
+                      type="checkbox" 
+                      checked={isJuriPenilai} 
+                      onChange={e => setIsJuriPenilai(e.target.checked)}
+                      className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Aktif Menilai</span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Jika tidak dicentang, juri ini tidak akan muncul di layar monitor dan rekap nilai.
+                  </p>
+                </div>
+            )}
             <div>
               <label className="form-label text-sm">Password {!editId && '*'}</label>
               <div className="relative">
@@ -250,6 +271,11 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${roleStyles[u.role] || roleStyles.juri}`}>
                       {u.role.toUpperCase().replace('_', ' ')}
                     </span>
+                    {u.role === 'juri' && !u.is_juri_penilai && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-gray-500 border border-gray-200">
+                        Tidak Menilai
+                      </span>
+                    )}
                   </td>
                   <td>
                     <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>

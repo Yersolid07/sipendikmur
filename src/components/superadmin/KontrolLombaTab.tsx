@@ -47,13 +47,15 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
     }
 
     // Load Juri for this event
-    const { data: jData } = await supabase
+    const { data: juriData } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'juri')
+      .eq('event_id', activeEvent.id)
+      .eq('is_juri_penilai', true)
       .order('nama')
       
-    if (jData) setJuriList(jData as Profile[])
+    if (juriData) setJuriList(juriData as Profile[])
 
     // Load Current User
     const { data: userData } = await supabase.auth.getUser()
