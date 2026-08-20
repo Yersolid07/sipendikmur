@@ -115,7 +115,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
 
         {activeTab === 'users' && (
           <div className="panel">
-            <UsersTab usersList={usersList} events={events} currentUser={profile} />
+            <UsersTab usersList={usersList} events={events} currentUser={profile} selectedEventId={selectedEventId} />
           </div>
         )}
 

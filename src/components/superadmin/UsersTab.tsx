@@ -5,7 +5,7 @@ import { Profile, Event } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { Pencil, ShieldAlert, ShieldCheck, UserCheck, UserX, UserPlus, X, Eye, EyeOff } from 'lucide-react'
 
-export default function UsersTab({ usersList: initialUsers, events, currentUser }: { usersList: Profile[], events: Event[], currentUser: Profile }) {
+export default function UsersTab({ usersList: initialUsers, events, currentUser, selectedEventId }: { usersList: Profile[], events: Event[], currentUser: Profile, selectedEventId?: string }) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
   const [showForm, setShowForm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -31,6 +31,8 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     let query = supabase.from('profiles').select('*').order('created_at', { ascending: false })
     if (currentUser.role === 'subadmin') {
       query = query.neq('role', 'superadmin').neq('role', 'subadmin').eq('event_id', currentUser.event_id)
+    } else if (currentUser.role === 'superadmin' && selectedEventId) {
+      query = query.or(`role.eq.superadmin,event_id.eq.${selectedEventId}`)
     }
     const { data } = await query
     if (data) setUsers(data as Profile[])
@@ -80,6 +82,40 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    const targetEventId = currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null)
+    
+    // Validasi Juri Penilai Maksimal 3
+    if (role === 'juri' && targetEventId) {
+      const { data: activeJuries } = await supabase.from('profiles')
+        .select('id, is_juri_penilai')
+        .eq('event_id', targetEventId)
+        .eq('role', 'juri')
+        .eq('is_active', true)
+        
+      let activeCount = activeJuries?.filter(j => j.is_juri_penilai).length || 0
+      
+      if (editId) {
+        const existingJuri = activeJuries?.find(j => j.id === editId)
+        if (existingJuri?.is_juri_penilai && !isJuriPenilai) {
+          activeCount -= 1
+        } else if (!existingJuri?.is_juri_penilai && isJuriPenilai) {
+          activeCount += 1
+        }
+      } else {
+        if (isJuriPenilai) activeCount += 1
+      }
+      
+      if (isJuriPenilai && activeCount > 3) {
+        alert('Maksimal hanya 3 juri yang bisa aktif menilai untuk event ini. Harap nonaktifkan juri penilai lain terlebih dahulu.')
+        return
+      }
+      
+      if (isJuriPenilai && activeCount < 3) {
+        alert(`Perhatian: Saat ini baru ada ${activeCount} juri yang aktif menilai untuk event ini. Pastikan Anda melengkapi total 3 juri penilai.`)
+      }
+    }
+
     if (!confirm('Apakah Anda yakin ingin menyimpan data pengguna ini?')) return
     setIsSaving(true)
 
@@ -125,6 +161,21 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
   }
 
   async function handleToggleStatus(user: Profile) {
+    // Validasi saat mengaktifkan juri
+    if (user.role === 'juri' && !user.is_active && user.is_juri_penilai && user.event_id) {
+      const { data: activeJuries } = await supabase.from('profiles')
+        .select('id')
+        .eq('event_id', user.event_id)
+        .eq('role', 'juri')
+        .eq('is_active', true)
+        .eq('is_juri_penilai', true)
+      
+      if ((activeJuries?.length || 0) >= 3) {
+        alert('Maksimal hanya 3 juri yang bisa aktif menilai untuk event ini. Nonaktifkan juri penilai lain terlebih dahulu sebelum mengaktifkan juri ini.')
+        return
+      }
+    }
+
     if (!confirm(`Apakah Anda yakin ingin mengubah status pengguna ini menjadi ${user.is_active ? 'Nonaktif' : 'Aktif'}?`)) return
     const { error } = await supabase.from('profiles').update({ is_active: !user.is_active } as any).eq('id', user.id)
     if (error) showToast('error', 'Gagal mengubah status: ' + error.message)
@@ -285,20 +336,21 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
                   </td>
                   <td>
                     <div className="flex items-center justify-end gap-2">
-                      {currentUser.id !== u.id && u.role !== 'superadmin' && (
-                        <>
-                          <button onClick={() => handleEdit(u)} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Akun">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
-                            u.is_active 
-                              ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
-                              : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                          }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-                            {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                            <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
-                          </button>
-                        </>
+                      <button onClick={() => {
+                        handleEdit(u)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Akun">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      {currentUser.id !== u.id && (
+                        <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
+                          u.is_active 
+                            ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
+                            : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                        }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
+                          {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                          <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
+                        </button>
                       )}
                     </div>
                   </td>
