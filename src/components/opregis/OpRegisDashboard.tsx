@@ -51,8 +51,12 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
 
     if (data) setPesertaList(data as RekapPenilaian[])
     
-    // Fetch categories for forms
-    const { data: katData } = await supabase.from('kategori').select('id, nama, bahan_mazmur').order('nama')
+    // Fetch categories for forms based on the current event
+    const { data: katData } = await supabase
+      .from('kategori')
+      .select('id, nama, bahan_mazmur')
+      .eq('event_id', activeEvent.id)
+      .order('nama')
     if (katData) setKategoriList(katData)
 
     setIsLoading(false)
