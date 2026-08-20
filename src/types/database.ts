@@ -248,6 +248,7 @@ export type Database = {
           status: 'menunggu' | 'berjalan' | 'jeda' | 'selesai'
           pengumuman: string | null
           nilai_dikunci: boolean
+          tampilkan_nilai: boolean
           created_at: string
           updated_at: string
         }
@@ -260,6 +261,7 @@ export type Database = {
           status?: 'menunggu' | 'berjalan' | 'jeda' | 'selesai'
           pengumuman?: string | null
           nilai_dikunci?: boolean
+          tampilkan_nilai?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -272,6 +274,7 @@ export type Database = {
           status?: 'menunggu' | 'berjalan' | 'jeda' | 'selesai'
           pengumuman?: string | null
           nilai_dikunci?: boolean
+          tampilkan_nilai?: boolean
           updated_at?: string
         }
         Relationships: [

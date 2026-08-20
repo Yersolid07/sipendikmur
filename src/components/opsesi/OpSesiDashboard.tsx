@@ -163,6 +163,18 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
     )
   }
 
+  async function handleToggleRevealScore(show: boolean) {
+    if (!sesi) return
+    setIsSaving(true)
+    const { error } = await supabase.from('sesi').update({ tampilkan_nilai: show } as any).eq('id', sesi.id)
+    if (error) {
+      showToast('error', 'Gagal mengubah status layar live: ' + error.message)
+    } else {
+      showToast('success', show ? 'Nilai ditampilkan di layar live!' : 'Nilai disembunyikan dari layar live.')
+    }
+    setIsSaving(false)
+  }
+
   const checkedInList = pesertaList.filter(p => p.is_checked_in)
   
   const isSesiActive = sesi?.status === 'berjalan'
@@ -303,8 +315,32 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                     </button>
                   </div>
                 ) : (
-                  <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-sm text-center">
-                    Nilai telah dikunci oleh Inspektur. Juri tidak dapat mengubah nilai lagi.
+                  <div className="space-y-3">
+                    <div className="p-3 bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-sm text-center">
+                      Nilai telah dikunci. Juri tidak dapat mengubah nilai lagi.
+                    </div>
+                    {sesi.status === 'selesai' && (
+                      <div className="mt-4 p-4 border border-[#e8dfce] bg-white rounded-xl text-center shadow-sm">
+                        <p className="text-sm text-slate-600 mb-3 font-medium">Kontrol Layar Live Publik</p>
+                        {sesi.tampilkan_nilai ? (
+                          <button 
+                            onClick={() => handleToggleRevealScore(false)}
+                            disabled={isSaving}
+                            className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg text-sm font-semibold transition-colors shadow-inner"
+                          >
+                            Tutup Nilai di Live Screen
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleToggleRevealScore(true)}
+                            disabled={isSaving}
+                            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md"
+                          >
+                            Tampilkan Nilai (Reveal Score)
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

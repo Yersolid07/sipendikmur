@@ -397,6 +397,8 @@ export default function AdminMonitorTab({ activeEvent, juriList, profile }: Prop
             const row = data.find(d => d.id === selectedDetailPeserta);
             if (row) handleAkhiriPenampilan(row.id, row.sesi_id);
           }}
+          currentUser={profile}
+          currentUserRole={profile.role}
         />
       )}
     </div>

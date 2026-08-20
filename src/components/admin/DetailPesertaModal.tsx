@@ -15,6 +15,8 @@ interface DetailPesertaModalProps {
   juriList: Profile[]
   onClose: () => void
   onAkhiriPenampilan: () => void
+  currentUserRole?: string
+  currentUser?: Profile
 }
 
 export default function DetailPesertaModal({
@@ -25,7 +27,9 @@ export default function DetailPesertaModal({
   pesertaMazmur,
   juriList,
   onClose,
-  onAkhiriPenampilan
+  onAkhiriPenampilan,
+  currentUserRole,
+  currentUser
 }: DetailPesertaModalProps) {
   const [penilaianList, setPenilaianList] = useState<any[]>([])
   const [varRequest, setVarRequest] = useState<any>(null)
@@ -34,6 +38,9 @@ export default function DetailPesertaModal({
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [hasOpenedVar, setHasOpenedVar] = useState(false)
+  const [alasanVar, setAlasanVar] = useState('')
+  const [showVarForm, setShowVarForm] = useState(false)
+  const [sesiData, setSesiData] = useState<any>(null)
 
   const supabase = createClient()
 
@@ -82,10 +89,13 @@ export default function DetailPesertaModal({
       if (currentSesiId) {
         const { data: sData } = await supabase
           .from('sesi')
-          .select('catatan_ip')
+          .select('*')
           .eq('id', currentSesiId)
           .single()
-        if (sData) setCatatanIp((sData as any).catatan_ip || '')
+        if (sData) {
+           setSesiData(sData)
+           setCatatanIp((sData as any).catatan_ip || '')
+        }
       }
 
       // 3. Fetch pending VAR (ONLY if all juries have submitted)
@@ -189,6 +199,58 @@ export default function DetailPesertaModal({
     alert('Kunci nilai seluruh Juri berhasil dibuka!')
   }
 
+  async function handleAjukanVarIP() {
+    if (!alasanVar.trim()) {
+      alert('Alasan VAR wajib diisi!')
+      return
+    }
+    
+    if (!currentUser) return
+    setIsSaving(true)
+    
+    const { error } = await supabase.from('var_requests').insert({
+      peserta_id: pesertaId,
+      requested_by: currentUser.id,
+      requested_role: 'ip',
+      alasan: alasanVar,
+      status: 'pending'
+    })
+    
+    setIsSaving(false)
+    if (error) {
+      alert('Gagal mengajukan VAR: ' + error.message)
+    } else {
+      alert('Permintaan VAR berhasil diajukan!')
+      setShowVarForm(false)
+      setAlasanVar('')
+      // Reload VAR requests
+      const { data: vData } = await supabase
+        .from('var_requests')
+        .select('*')
+        .eq('peserta_id', pesertaId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+      if (vData && vData.length > 0) setVarRequest(vData[0])
+    }
+  }
+
+  async function handleToggleRevealScore(show: boolean) {
+    if (!sesiId && !sesiData?.id) return
+    setIsSaving(true)
+    
+    const targetSesiId = sesiId || sesiData?.id
+    const { error } = await supabase.from('sesi').update({ tampilkan_nilai: show } as any).eq('id', targetSesiId)
+    
+    if (error) {
+      alert('Gagal mengubah status layar live: ' + error.message)
+    } else {
+      if (sesiData) {
+        setSesiData({ ...sesiData, tampilkan_nilai: show })
+      }
+    }
+    setIsSaving(false)
+  }
+
   // Helper untuk mendapatkan status pengiriman juri
   const getJuriData = (jId: string) => penilaianList.find(p => p.juri_id === jId)
 
@@ -233,6 +295,8 @@ export default function DetailPesertaModal({
     
     return { juri, isSubmitted, filled, totalScore, p }
   })
+
+  const allSubmitted = juriScores.length > 0 && juriScores.every(j => j.isSubmitted)
 
   // Jomplang Detection
   let isJomplang = false
@@ -456,40 +520,93 @@ export default function DetailPesertaModal({
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 bg-[#fdfbf7] flex items-center justify-between gap-4 mt-auto rounded-b-2xl border-t border-[#e8dfce]">
-          <div className="text-xs text-slate-400">
-            {!(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)) && !hasOpenedVar && (
-              <span className="text-rose-500 font-medium">⚠️ Semua juri harus mengirim nilai sebelum memfinalkan penampilan.</span>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={async () => {
-                // Calculate final score before saving
-                const submittedScores = juriScores.filter(j => j.isSubmitted).map(j => j.totalScore);
-                const finalScore = submittedScores.length > 0 
-                  ? (submittedScores.reduce((acc, curr) => acc + curr, 0) / submittedScores.length)
-                  : 0;
-                  
-                // Save nilai akhir to database
-                await supabase
-                  .from('peserta')
-                  .update({ nilai_akhir: finalScore } as any)
-                  .eq('id', pesertaId)
+        <div className="p-4 bg-[#fdfbf7] flex flex-col gap-4 mt-auto rounded-b-2xl border-t border-[#e8dfce]">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+            <div className="flex flex-col md:flex-row gap-4 w-full justify-between items-center bg-[#f5efe6] p-4 rounded-xl border border-[#e8dfce]">
+              
+              {/* Left Action (IP VAR) */}
+              <div className="flex flex-col gap-2">
+                {currentUserRole === 'ip' && allSubmitted && !varRequest && !hasOpenedVar && (
+                  showVarForm ? (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="text" 
+                        value={alasanVar}
+                        onChange={(e) => setAlasanVar(e.target.value)}
+                        placeholder="Alasan pengajuan VAR..."
+                        className="form-input text-sm py-1.5 w-64"
+                      />
+                      <button onClick={handleAjukanVarIP} disabled={isSaving} className="btn-primary py-1.5 text-sm">
+                        Kirim VAR
+                      </button>
+                      <button onClick={() => setShowVarForm(false)} className="btn-secondary py-1.5 text-sm">
+                        Batal
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setShowVarForm(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 font-semibold rounded-lg transition-colors border border-rose-200"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Ajukan VAR
+                    </button>
+                  )
+                )}
+              </div>
 
-                onAkhiriPenampilan()
-                onClose()
-              }}
-              disabled={isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))}
-              className={`px-5 py-2.5 rounded-xl text-white font-semibold transition-colors shadow-sm
-                ${isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))
-                  ? 'bg-slate-300 cursor-not-allowed'
-                  : 'bg-[#059669] hover:bg-emerald-700'
-                }`}
-            >
-              {hasOpenedVar ? 'Terapkan Perubahan Juri & Finalkan' : 'Finalkan Nilai & Akhiri Penampilan'}
-            </button>
+              {/* Right Actions (Finalize / Reveal) */}
+              <div className="flex items-center gap-3">
+                {(currentUserRole === 'superadmin' || currentUserRole === 'subadmin') && sesiData?.status === 'selesai' && (
+                  sesiData?.tampilkan_nilai ? (
+                    <button 
+                      onClick={() => handleToggleRevealScore(false)}
+                      disabled={isSaving}
+                      className="btn-secondary flex items-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" /> Sembunyikan Nilai di Live
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleToggleRevealScore(true)}
+                      disabled={isSaving}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl shadow transition-colors flex items-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Tampilkan Nilai (Reveal Score)
+                    </button>
+                  )
+                )}
+
+                <button
+                  onClick={async () => {
+                    const submittedScores = juriScores.filter(j => j.isSubmitted).map(j => j.totalScore);
+                    const finalScore = submittedScores.length > 0 
+                      ? (submittedScores.reduce((acc, curr) => acc + curr, 0) / submittedScores.length)
+                      : 0;
+                      
+                    await supabase
+                      .from('peserta')
+                      .update({ nilai_akhir: finalScore } as any)
+                      .eq('id', pesertaId)
+
+                    onAkhiriPenampilan()
+                    onClose()
+                  }}
+                  disabled={isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))}
+                  className={`flex items-center gap-2 py-2.5 px-6 rounded-xl font-bold transition-all shadow-md active:scale-95 ${
+                    isLoading || (!hasOpenedVar && !(juriScores.length > 0 && juriScores.every(j => j.isSubmitted)))
+                      ? 'bg-slate-300 cursor-not-allowed text-slate-500'
+                      : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg'
+                  }`}
+                >
+                  <CheckCircle2 className="w-5 h-5" />
+                  {hasOpenedVar ? 'Terapkan Perubahan Nilai Juri & Finalkan' : 'Finalkan Nilai & Akhiri Penampilan'}
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 px-4">
             <button 
               onClick={onClose}
               className="px-6 py-2.5 rounded-xl border border-[#e8dfce] bg-white text-slate-700 font-medium hover:bg-slate-50 transition-colors shadow-sm"

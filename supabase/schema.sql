@@ -138,10 +138,11 @@ CREATE TABLE IF NOT EXISTS public.sesi (
   kategori_id UUID NOT NULL REFERENCES public.kategori(id),
   peserta_aktif_id UUID REFERENCES public.peserta(id), -- Peserta yang saat ini tampil (bisa diubah OpSesi bebas)
   nama_sesi TEXT,
-  status TEXT DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'berjalan', 'jeda', 'selesai')),
+  status TEXT NOT NULL DEFAULT 'menunggu' CHECK (status IN ('menunggu', 'berjalan', 'jeda', 'selesai')),
   pengumuman TEXT,
   catatan_ip TEXT,
   nilai_dikunci BOOLEAN DEFAULT FALSE,
+  tampilkan_nilai BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -194,13 +195,13 @@ CREATE POLICY "Juri can view and insert their own penilaian" ON public.penilaian
 -- TABLE: var_requests (Pengajuan VAR oleh Juri/IP)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.var_requests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  penilaian_id UUID REFERENCES public.penilaian(id) ON DELETE CASCADE,
-  peserta_id UUID NOT NULL REFERENCES public.peserta(id),
-  requested_by UUID NOT NULL REFERENCES public.profiles(id), -- Bisa Juri atau IP
-  requested_role TEXT NOT NULL CHECK (requested_role IN ('juri', 'ip')),
-  alasan TEXT NOT NULL,
-  lokasi_teks TEXT, -- Menit/teks yang dipertanyakan
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    penilaian_id UUID REFERENCES public.penilaian(id) ON DELETE CASCADE, -- Nullable for IP
+    peserta_id UUID NOT NULL REFERENCES public.peserta(id),
+    requested_by UUID NOT NULL REFERENCES public.profiles(id), -- Bisa Juri atau IP
+    requested_role TEXT NOT NULL CHECK (requested_role IN ('juri', 'ip')),
+    alasan TEXT NOT NULL,
+    lokasi_teks TEXT, -- Menit/teks yang dipertanyakan
   
   -- Jika dari IP, butuh persetujuan Juri
   approved_by_juri_1 BOOLEAN DEFAULT FALSE,

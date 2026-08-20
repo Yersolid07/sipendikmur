@@ -17,6 +17,7 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
   const [pesertaList, setPesertaList] = useState<PesertaWithKategori[]>([])
   const [sesiList, setSesiList] = useState<Sesi[]>([])
   const [juriList, setJuriList] = useState<Profile[]>([])
+  const [currentUser, setCurrentUser] = useState<Profile | null>(null)
   const [selectedDetailPeserta, setSelectedDetailPeserta] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
@@ -50,10 +51,15 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
       .from('profiles')
       .select('*')
       .eq('role', 'juri')
-      .eq('event_id', activeEvent.id)
+      .order('nama')
       
-    if (jData) {
-      setJuriList(jData as any)
+    if (jData) setJuriList(jData as Profile[])
+
+    // Load Current User
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData?.user) {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single()
+      if (profileData) setCurrentUser(profileData as Profile)
     }
 
     setIsLoading(false)
@@ -246,6 +252,8 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
                loadData()
             }
           }}
+          currentUser={currentUser || undefined}
+          currentUserRole={currentUser?.role}
         />
       )}
     </div>

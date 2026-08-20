@@ -51,7 +51,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
   const supabase = createClient()
   
   const loadScore = useCallback(async () => {
-    if (sesi?.nilai_dikunci && sesi.peserta_aktif_id) {
+    if (sesi?.tampilkan_nilai && sesi.peserta_aktif_id) {
       const { data } = await supabase
         .from('v_rekap_penilaian')
         .select('nilai_akhir')
@@ -71,7 +71,7 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
       setJuriScores([])
       setRevealStage(0)
     }
-  }, [sesi?.nilai_dikunci, sesi?.peserta_aktif_id, supabase])
+  }, [sesi?.tampilkan_nilai, sesi?.peserta_aktif_id, supabase])
 
   const loadSesi = useCallback(async () => {
     if (!currentEvent) return
@@ -99,15 +99,15 @@ export default function LiveScreen({ activeEvent, settings, initialSesi }: Props
 
   useEffect(() => {
     loadScore()
-  }, [sesi?.nilai_dikunci, loadScore])
+  }, [sesi?.tampilkan_nilai, loadScore])
 
   useEffect(() => {
-    if (sesi?.nilai_dikunci && finalScore !== null) {
+    if (sesi?.tampilkan_nilai && finalScore !== null) {
       if (revealStage === 0) setRevealStage(1)
     } else {
       setRevealStage(0)
     }
-  }, [sesi?.nilai_dikunci, finalScore, revealStage])
+  }, [sesi?.tampilkan_nilai, finalScore, revealStage])
 
   useEffect(() => {
     if (revealStage === 0 || revealStage > juriScores.length + 1) return
