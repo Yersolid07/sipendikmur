@@ -26,13 +26,15 @@ export default async function OpSesiPage() {
     redirect('/dashboard')
   }
 
-  // Get the active event
-  const { data: activeEventData } = await supabase
-    .from('events')
-    .select('*')
-    .eq('status', 'aktif')
-    .limit(1)
-    .single()
+  let activeEventQuery = supabase.from('events').select('*')
+  
+  if (profile.event_id) {
+    activeEventQuery = activeEventQuery.eq('id', profile.event_id)
+  } else {
+    activeEventQuery = activeEventQuery.eq('status', 'aktif').order('created_at', { ascending: false }).limit(1)
+  }
+
+  const { data: activeEventData } = await activeEventQuery.single()
 
   // Get active sesi if any
   let activeSesi: ActiveSesi | null = null

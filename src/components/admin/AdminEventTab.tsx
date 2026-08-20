@@ -45,8 +45,6 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
       await supabase.from('events').update(payload as any).eq('id', editId)
       showToast('success', 'Event berhasil diperbarui!')
     } else {
-      // Deactivate other events first
-      await supabase.from('events').update({ status: 'draft' } as any).neq('status', 'selesai')
       await supabase.from('events').insert({ ...payload, status: 'aktif' } as any)
       showToast('success', 'Event baru berhasil dibuat!')
     }
@@ -59,7 +57,6 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
   }
 
   async function handleSetAktif(id: string) {
-    await supabase.from('events').update({ status: 'draft' } as any).neq('status', 'selesai')
     await supabase.from('events').update({ status: 'aktif' } as any).eq('id', id)
     showToast('success', 'Event diaktifkan!')
     loadEvents()

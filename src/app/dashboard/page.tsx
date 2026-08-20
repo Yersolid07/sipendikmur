@@ -30,13 +30,15 @@ export default async function DashboardPage() {
   if (profile.role === 'op_sesi') redirect('/op-sesi')
 
   // Get the active event
-  const { data: activeEventData } = await supabase
-    .from('events')
-    .select('*')
-    .eq('status', 'aktif')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
+  let activeEventQuery = supabase.from('events').select('*')
+  
+  if (profile.event_id) {
+    activeEventQuery = activeEventQuery.eq('id', profile.event_id)
+  } else {
+    activeEventQuery = activeEventQuery.eq('status', 'aktif').order('created_at', { ascending: false }).limit(1)
+  }
+
+  const { data: activeEventData } = await activeEventQuery.single()
 
   const activeEvent = activeEventData as Event | null
 
