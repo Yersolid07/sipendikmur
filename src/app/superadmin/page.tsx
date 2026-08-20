@@ -32,7 +32,8 @@ export default async function SuperadminPage() {
   let usersQuery = supabase.from('profiles').select('*').order('nama')
   if (profile.role === 'subadmin') {
     usersQuery = usersQuery
-      .not('role', 'in', '("superadmin","subadmin")')
+      .neq('role', 'superadmin')
+      .neq('role', 'subadmin')
       .eq('event_id', profile.event_id)
   }
   const { data: usersData } = await usersQuery

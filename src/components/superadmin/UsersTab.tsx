@@ -27,9 +27,13 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
   }
 
   const loadUsers = useCallback(async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    let query = supabase.from('profiles').select('*').order('created_at', { ascending: false })
+    if (currentUser.role === 'subadmin') {
+      query = query.neq('role', 'superadmin').neq('role', 'subadmin').eq('event_id', currentUser.event_id)
+    }
+    const { data } = await query
     if (data) setUsers(data as Profile[])
-  }, [supabase])
+  }, [supabase, currentUser])
 
   useEffect(() => {
     loadUsers()
@@ -66,6 +70,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     setNama(user.nama)
     setEmail(user.email)
     setRole(user.role as any)
+    setEventId(user.event_id || '')
     setPassword('')
     setShowForm(true)
   }
@@ -75,8 +80,12 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
     setIsSaving(true)
 
     if (editId) {
-      // Update existing profile (nama & role only)
-      const { error } = await supabase.from('profiles').update({ nama, role }).eq('id', editId)
+      // Update existing profile (nama, role, event_id)
+      const { error } = await supabase.from('profiles').update({ 
+        nama, 
+        role,
+        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null) 
+      }).eq('id', editId)
       if (error) {
         showToast('error', 'Gagal memperbarui data akun: ' + error.message)
       } else {
@@ -90,7 +99,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
         email,
         password,
         role,
-        event_id: role === 'subadmin' ? eventId : null
+        event_id: currentUser.role === 'subadmin' ? currentUser.event_id : (eventId || null)
       }
       const res = await fetch('/api/admin/create-juri', {
         method: 'POST',
@@ -178,7 +187,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
                 <option value="juri">Juri (Input Nilai)</option>
               </select>
             </div>
-            {role === 'subadmin' && currentUser.role === 'superadmin' && !editId && (
+            {role !== 'superadmin' && currentUser.role === 'superadmin' && (
               <div>
                 <label className="form-label text-sm">Pilih Event (Wajib) *</label>
                 <select value={eventId} onChange={e => setEventId(e.target.value)} required className="form-input cursor-pointer bg-white">
@@ -248,17 +257,21 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
                   </td>
                   <td>
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleEdit(u)} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Akun">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
-                        u.is_active 
-                          ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
-                          : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
-                      }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-                        {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                        <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
-                      </button>
+                      {currentUser.id !== u.id && u.role !== 'superadmin' && (
+                        <>
+                          <button onClick={() => handleEdit(u)} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="Edit Akun">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleToggleStatus(u)} className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border ${
+                            u.is_active 
+                              ? 'text-rose-600 border-rose-200 hover:bg-rose-50' 
+                              : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                          }`} title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
+                            {u.is_active ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{u.is_active ? 'Suspend' : 'Aktifkan'}</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

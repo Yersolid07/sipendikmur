@@ -21,8 +21,7 @@ export default function Navbar({ profile }: Props) {
 
   async function handleLogout() {
     await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    window.location.href = '/login'
   }
 
   async function handleChangePassword(e: React.FormEvent) {

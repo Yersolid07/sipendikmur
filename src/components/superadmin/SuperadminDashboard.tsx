@@ -16,7 +16,14 @@ interface Props {
 
 export default function SuperadminDashboard({ profile, events, usersList }: Props) {
   const [activeTab, setActiveTab] = useState<'events' | 'kategori' | 'users' | 'settings'>('events')
-  const activeEvent = profile.role === 'subadmin' ? events[0] : events.find((e) => e.status === 'aktif')
+  
+  // By default, select the subadmin's assigned event OR the first active event (or just the first event if none active)
+  const defaultEventId = profile.role === 'subadmin' 
+    ? events[0]?.id 
+    : (events.find((e) => e.status === 'aktif')?.id || events[0]?.id)
+    
+  const [selectedEventId, setSelectedEventId] = useState<string | undefined>(defaultEventId)
+  const activeEvent = events.find(e => e.id === selectedEventId)
 
   return (
     <div className="space-y-6">
@@ -37,12 +44,29 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
             </span>
           )}
         </div>
-        <div className="flex flex-col items-end">
-          <span className="text-sm text-[var(--color-text-muted)]">Event Aktif:</span>
-          {activeEvent ? (
-            <span className="badge badge-success mt-1">{activeEvent.nama}</span>
+        <div className="flex flex-col items-start md:items-end w-full md:w-auto">
+          <span className="text-sm text-[var(--color-text-muted)] mb-1">
+            {profile.role === 'superadmin' ? 'Konteks Event:' : 'Event Anda:'}
+          </span>
+          {profile.role === 'superadmin' ? (
+            <select 
+              value={selectedEventId || ''} 
+              onChange={(e) => setSelectedEventId(e.target.value)}
+              className="form-input py-1.5 text-sm w-full md:w-64 bg-white font-medium border-[var(--color-amber-dark)]"
+            >
+              {events.length === 0 && <option value="" disabled>Belum ada event</option>}
+              {events.map(ev => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.nama} {ev.status === 'aktif' ? '(Aktif)' : ev.status === 'selesai' ? '(Selesai)' : '(Draft)'}
+                </option>
+              ))}
+            </select>
           ) : (
-            <span className="badge badge-error mt-1">Tidak ada event aktif</span>
+            activeEvent ? (
+              <span className="badge badge-success mt-1">{activeEvent.nama}</span>
+            ) : (
+              <span className="badge badge-error mt-1">Tidak ada event aktif</span>
+            )
           )}
         </div>
       </div>

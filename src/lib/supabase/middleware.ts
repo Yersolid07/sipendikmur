@@ -2,7 +2,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const SESSION_MAX_AGE_DAYS = 7 // Auto-logout after 7 days of inactivity
+const SESSION_MAX_AGE_DAYS = 0.5 // Auto-logout after 12 hours of inactivity
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
