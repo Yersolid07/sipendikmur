@@ -33,6 +33,7 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!confirm('Apakah Anda yakin ingin menyimpan event ini?')) return
     setIsSaving(true)
 
     const payload = {
@@ -58,6 +59,7 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
   }
 
   async function handleSetAktif(id: string) {
+    if (!confirm('Apakah Anda yakin ingin mengaktifkan event ini? Semua panel akan beralih ke event ini.')) return
     await supabase.from('events').update({ status: 'aktif' } as any).eq('id', id)
     showToast('success', 'Event diaktifkan!')
     loadEvents()

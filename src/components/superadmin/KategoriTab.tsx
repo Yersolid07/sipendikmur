@@ -69,7 +69,7 @@ export default function KategoriTab({ activeEvent }: { activeEvent: Event | unde
     e.preventDefault()
     if (!activeEvent) return
     if (!confirm('Apakah Anda yakin ingin menyimpan kategori ini?')) return
-    setIsSaving(true)
+    
 
     // Validation: Total weight must be 100
     const totalWeight = jenisLomba === 'perorangan' 
