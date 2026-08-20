@@ -18,9 +18,9 @@ export default function Navbar({ profile }: Props) {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const router = useRouter()
   const supabase = createClient()
-
+  
   async function handleLogout() {
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     window.location.href = '/login'
   }
 
