@@ -6,7 +6,8 @@ import AdminEventTab from '../admin/AdminEventTab'
 import KategoriTab from './KategoriTab'
 import UsersTab from './UsersTab'
 import SettingsTab from './SettingsTab'
-import { Trophy, ClipboardList, Users, Settings } from 'lucide-react'
+import KontrolLombaTab from './KontrolLombaTab'
+import { Trophy, ClipboardList, Users, Settings, MonitorPlay } from 'lucide-react'
 
 interface Props {
   profile: Profile
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default function SuperadminDashboard({ profile, events, usersList }: Props) {
-  const [activeTab, setActiveTab] = useState<'events' | 'kategori' | 'users' | 'settings'>('events')
+  const [activeTab, setActiveTab] = useState<'kontrol' | 'events' | 'kategori' | 'users' | 'settings'>('kontrol')
   
   // By default, select the subadmin's assigned event OR the first active event (or just the first event if none active)
   const defaultEventId = profile.role === 'subadmin' 
@@ -74,6 +75,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
       {/* Tabs */}
       <div className="tab-container">
         {([
+          { id: 'kontrol', label: 'Kontrol Lomba', icon: <MonitorPlay className="w-5 h-5" /> },
           { id: 'events', label: 'Event & Lomba', icon: <Trophy className="w-5 h-5" /> },
           { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
           { id: 'users', label: 'Manajemen Akun', icon: <Users className="w-5 h-5" /> },
@@ -117,6 +119,10 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
           <div className="panel">
             <SettingsTab />
           </div>
+        )}
+        
+        {activeTab === 'kontrol' && activeEvent && (
+          <KontrolLombaTab activeEvent={activeEvent} />
         )}
       </div>
     </div>

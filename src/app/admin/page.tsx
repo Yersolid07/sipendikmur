@@ -18,7 +18,7 @@ export default async function AdminPage() {
 
   const profile = profileData as Profile | null
   if (!profile) redirect('/login')
-  if (profile.role === 'juri') redirect('/dashboard')
+  if (!['ip', 'subadmin', 'superadmin'].includes(profile.role)) redirect('/dashboard')
 
   // Get all events
   const { data: eventsData } = await supabase

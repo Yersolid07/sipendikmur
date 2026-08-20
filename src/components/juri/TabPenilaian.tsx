@@ -17,17 +17,78 @@ interface Props {
   activeEvent: Event
 }
 
-const GRADES = [
-  { label: 'Grade 1', val: 1, desc: 'Sangat Kurang' },
-  { label: 'Grade 1.5', val: 1.5, desc: 'Sangat Kurang (+)' },
-  { label: 'Grade 2', val: 2, desc: 'Kurang' },
-  { label: 'Grade 2.5', val: 2.5, desc: 'Kurang (+)' },
-  { label: 'Grade 3', val: 3, desc: 'Cukup' },
-  { label: 'Grade 3.5', val: 3.5, desc: 'Cukup (+)' },
-  { label: 'Grade 4', val: 4, desc: 'Baik' },
-  { label: 'Grade 4.5', val: 4.5, desc: 'Baik (+)' },
-  { label: 'Grade 5', val: 5, desc: 'Sangat Baik' },
-]
+const getGradeDesc = (val: number, kriteriaKey: string | null) => {
+  const baseDesc: Record<number, string> = {
+    1: 'Sangat Kurang',
+    1.5: 'Sangat Kurang (+)',
+    2: 'Kurang',
+    2.5: 'Kurang (+)',
+    3: 'Cukup',
+    3.5: 'Cukup (+)',
+    4: 'Baik',
+    4.5: 'Baik (+)',
+    5: 'Sangat Baik',
+  }
+  
+  if (!kriteriaKey) return baseDesc[val]
+
+  const getSpecific = (v: number, dict: string[]) => {
+    const isPlus = v % 1 !== 0
+    const baseVal = Math.floor(v)
+    const baseStr = dict[baseVal - 1]
+    return isPlus ? `${baseStr} namun ada sedikit peningkatan kualitas.` : baseStr
+  }
+
+  if (kriteriaKey === 'interpretasi') {
+    return getSpecific(val, [
+      'Sama sekali tidak memahami/menangkap makna teks, penyampaian sangat melenceng.',
+      'Banyak kekeliruan dalam penekanan makna teks, belum tergambar dengan jelas.',
+      'Memahami makna teks secara dasar, namun penyampaian belum terlalu mendalam.',
+      'Pemahaman makna teks baik, penekanan makna sudah cukup tepat.',
+      'Pemahaman sangat mendalam, makna teks tersampaikan dengan sempurna.'
+    ])
+  }
+  if (kriteriaKey === 'penghayatan') {
+    return getSpecific(val, [
+      'Datar, tanpa emosi, mimik/gestur tidak sesuai dengan konteks.',
+      'Emosi kaku atau sering tidak relevan dengan teks yang dibaca.',
+      'Emosi dan mimik mulai terlihat namun kurang konsisten.',
+      'Penghayatan emosi, mimik, dan gestur tubuh sudah baik dan meyakinkan.',
+      'Emosi sangat menyentuh, gestur dan mimik sangat natural dan menjiwai penuh.'
+    ])
+  }
+  if (kriteriaKey === 'artikulasi') {
+    return getSpecific(val, [
+      'Pelafalan sangat tidak jelas, bergumam, intonasi kacau.',
+      'Suara sering kurang jelas, pelafalan kata banyak yang keliru/tidak utuh.',
+      'Suara cukup jelas terdengar, intonasi standar, pemenggalan kalimat lumayan.',
+      'Pelafalan kata jelas, intonasi dinamis, dan pemenggalan kalimat teratur baik.',
+      'Pelafalan sangat jernih, pemenggalan kata dan intonasi sangat memukau dan tepat.'
+    ])
+  }
+  if (kriteriaKey === 'penampilan') {
+    return getSpecific(val, [
+      'Tidak rapi, postur sangat buruk, sangat gugup/gemetar.',
+      'Kurang rapi, terlihat sering gelisah, pandangan tidak fokus.',
+      'Kerapian standar, postur cukup baik, lumayan tenang di panggung.',
+      'Rapi, postur tegap, percaya diri, dan tenang menguasai panggung.',
+      'Sangat prima, penuh wibawa, ketenangan dan karisma sangat luar biasa.'
+    ])
+  }
+  if (kriteriaKey === 'kekompakan') {
+    return getSpecific(val, [
+      'Sangat berantakan, suara/gerakan saling mendahului atau bertabrakan.',
+      'Sering tidak sinkron, harmoni kurang terjaga.',
+      'Cukup serempak namun sesekali goyah pada pergantian/transisi.',
+      'Harmonis, pergantian suara/gerakan rapi dan sinkron.',
+      'Sangat solid, harmoni, chemistry, dan kekompakan luar biasa tanpa cela.'
+    ])
+  }
+
+  return baseDesc[val]
+}
+
+const GRADES = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
 
 const CATATAN_ASPEK = [
   { id: 'kesan', label: '1. Kesan dari teks bacaan' },
@@ -164,10 +225,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     async function fetchProgressAndVar() {
       // 1. Fetch Progress
       const { data } = await supabase.from('penilaian').select('id, is_submitted, juri_id').eq('peserta_id', sesi!.peserta_aktif_id)
+      
+      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'juri').eq('event_id', activeEvent.id)
+
       if (data) {
         setJuriProgress({
           submitted: data.filter(d => d.is_submitted).length,
-          total: data.length > 0 ? data.length : 3
+          total: count || 3
         })
         
         // Cek apakah nilai kita sudah di-unlock oleh IP
@@ -474,28 +538,28 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
             <p className="text-slate-500 mb-6 text-sm">Pilih grade yang paling sesuai dengan penampilan peserta.</p>
 
             <div className="space-y-3">
-              {GRADES.map(g => (
+              {GRADES.map(val => (
                 <button
-                  key={g.val}
+                  key={val}
                   onClick={() => {
-                    setScores({ ...scores, [activeModal]: g.val })
+                    setScores({ ...scores, [activeModal]: val })
                     setActiveModal(null)
                   }}
                   className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 group
-                    ${scores[activeModal] === g.val 
+                    ${scores[activeModal] === val 
                       ? 'border-amber-600 bg-amber-50' 
                       : 'border-slate-200 hover:border-amber-400 hover:bg-slate-100'}`}
                 >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display font-bold text-lg
-                    ${scores[activeModal] === g.val ? 'bg-amber-800 text-white' : 'bg-slate-200 text-slate-600 group-hover:bg-amber-100'}`}>
-                    {g.val}
+                  <div className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center font-display font-bold text-lg
+                    ${scores[activeModal] === val ? 'bg-amber-800 text-white' : 'bg-slate-200 text-slate-600 group-hover:bg-amber-100'}`}>
+                    {val}
                   </div>
                   <div>
-                    <div className={`font-bold ${scores[activeModal] === g.val ? 'text-amber-900' : 'text-slate-700'}`}>
-                      {g.label}
+                    <div className={`font-bold ${scores[activeModal] === val ? 'text-amber-900' : 'text-slate-700'}`}>
+                      Grade {val}
                     </div>
-                    <div className={`text-xs mt-0.5 font-medium ${scores[activeModal] === g.val ? 'text-amber-700' : 'text-slate-500'}`}>
-                      {g.desc}
+                    <div className={`text-xs mt-0.5 font-medium leading-relaxed ${scores[activeModal] === val ? 'text-amber-700' : 'text-slate-500'}`}>
+                      {getGradeDesc(val, activeModal)}
                     </div>
                   </div>
                 </button>

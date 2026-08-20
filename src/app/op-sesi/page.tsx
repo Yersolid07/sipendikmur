@@ -22,7 +22,7 @@ export default async function OpSesiPage() {
     .single()
 
   const profile = profileData as Profile | null
-  if (!profile || (profile.role !== 'op_sesi' && profile.role !== 'superadmin')) {
+  if (!profile || !['op_sesi', 'subadmin', 'superadmin'].includes(profile.role)) {
     redirect('/dashboard')
   }
 

@@ -34,24 +34,23 @@ export function calculateTotalScore({ kriteria, scores, perhatian, catatan_aspek
     sum -= mistakesCount
   }
 
-  // Calculate Catatan Juri Bonus (Max 10)
+  // Calculate Bonus from Catatan Aspek
+  let catatanBonus = 0
   if (catatan_aspek) {
-    const aspectKeys = Object.keys(catatan_aspek)
-    if (aspectKeys.length > 0) {
-      let aspectSum = 0
-      for (const key of aspectKeys) {
-        aspectSum += catatan_aspek[key]
-      }
-      const catatanBonus = (aspectSum / 50) * 10
-      sum += catatanBonus
+    const keys = Object.keys(catatan_aspek)
+    let bonusSum = 0
+    keys.forEach(k => bonusSum += catatan_aspek[k])
+    
+    // Max 10 points bonus
+    if (keys.length > 0) {
+      catatanBonus = (bonusSum / (keys.length * 5)) * 10
     }
   }
 
-  const rawSum = Math.max(0, sum)
+  const rawSum = Math.max(0, sum + catatanBonus)
 
   if (scale && scale.max > scale.min) {
-    // rawSum includes base criteria (max: baseMax) + catatan bonus (max: 10)
-    const maxPossible = baseMax + 10
+    const maxPossible = baseMax
     
     // Scale the rawSum proportionally to the range
     const scaled = scale.min + (rawSum / maxPossible) * (scale.max - scale.min)

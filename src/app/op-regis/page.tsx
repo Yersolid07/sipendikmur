@@ -17,7 +17,7 @@ export default async function OpRegisPage() {
     .single()
 
   const profile = profileData as Profile | null
-  if (!profile || (profile.role !== 'op_regis' && profile.role !== 'superadmin')) {
+  if (!profile || !['op_regis', 'subadmin', 'superadmin'].includes(profile.role)) {
     redirect('/dashboard')
   }
 
