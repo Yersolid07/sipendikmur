@@ -126,7 +126,7 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
           Anda memiliki hak istimewa untuk memasuki panel operator kapan saja untuk melakukan intervensi atau pemantauan langsung.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/op-regis" target="_blank" className="p-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-colors flex items-center justify-between group">
+          <Link href={`/op-regis${activeEvent ? `?eventId=${activeEvent.id}` : ''}`} target="_blank" className="p-4 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:border-blue-300 transition-colors flex items-center justify-between group">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-600 rounded-lg text-white">
                 <Users className="w-5 h-5" />
@@ -136,7 +136,7 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
             <ExternalLink className="w-4 h-4 text-blue-500 opacity-50 group-hover:opacity-100" />
           </Link>
 
-          <Link href="/op-sesi" target="_blank" className="p-4 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 transition-colors flex items-center justify-between group">
+          <Link href={`/op-sesi${activeEvent ? `?eventId=${activeEvent.id}` : ''}`} target="_blank" className="p-4 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-300 transition-colors flex items-center justify-between group">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-600 rounded-lg text-white">
                 <MonitorPlay className="w-5 h-5" />
@@ -146,7 +146,7 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
             <ExternalLink className="w-4 h-4 text-indigo-500 opacity-50 group-hover:opacity-100" />
           </Link>
 
-          <Link href="/admin" target="_blank" className="p-4 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 hover:border-rose-300 transition-colors flex items-center justify-between group">
+          <Link href={`/admin${activeEvent ? `?eventId=${activeEvent.id}` : ''}`} target="_blank" className="p-4 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 hover:border-rose-300 transition-colors flex items-center justify-between group">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[#c81e1e] rounded-lg text-white">
                 <ShieldAlert className="w-5 h-5" />

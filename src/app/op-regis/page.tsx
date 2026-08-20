@@ -5,7 +5,7 @@ import AcaraSelesaiView from '@/components/shared/AcaraSelesaiView'
 import OpRegisDashboard from '@/components/opregis/OpRegisDashboard'
 import { Profile, Event, Setting } from '@/types/database'
 
-export default async function OpRegisPage() {
+export default async function OpRegisPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -22,9 +22,14 @@ export default async function OpRegisPage() {
     redirect('/dashboard')
   }
 
+  const resolvedParams = await searchParams;
+  const eventId = resolvedParams.eventId;
+
   let activeEventQuery = supabase.from('events').select('*')
   
-  if (profile.event_id) {
+  if (eventId && ['superadmin', 'subadmin'].includes(profile.role)) {
+    activeEventQuery = activeEventQuery.eq('id', eventId)
+  } else if (profile.event_id) {
     activeEventQuery = activeEventQuery.eq('id', profile.event_id)
   } else {
     activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)

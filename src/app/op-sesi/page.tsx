@@ -10,7 +10,7 @@ type ActiveSesi = Sesi & {
   kategori: { id: string; nama: string; jenis_lomba: 'perorangan' | 'beregu' } | null
 }
 
-export default async function OpSesiPage() {
+export default async function OpSesiPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -27,9 +27,14 @@ export default async function OpSesiPage() {
     redirect('/dashboard')
   }
 
+  const resolvedParams = await searchParams;
+  const eventId = resolvedParams.eventId;
+
   let activeEventQuery = supabase.from('events').select('*')
   
-  if (profile.event_id) {
+  if (eventId && ['superadmin', 'subadmin'].includes(profile.role)) {
+    activeEventQuery = activeEventQuery.eq('id', eventId)
+  } else if (profile.event_id) {
     activeEventQuery = activeEventQuery.eq('id', profile.event_id)
   } else {
     activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)

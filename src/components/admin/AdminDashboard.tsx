@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Profile, Event } from '@/types/database'
 import AdminMonitorTab from './AdminMonitorTab'
 import AdminRekapTab from './AdminRekapTab'
@@ -18,8 +19,13 @@ const TABS = [
 ]
 
 export default function AdminDashboard({ profile, events, juriList }: Props) {
+  const searchParams = useSearchParams()
+  const eventIdParam = searchParams.get('eventId')
   const [activeTab, setActiveTab] = useState('monitor')
-  const activeEvent = events.find((e) => e.status === 'aktif') ?? null
+  
+  const activeEvent = eventIdParam 
+    ? events.find((e) => e.id === eventIdParam) ?? null 
+    : events.find((e) => e.status === 'aktif') ?? null
 
   const activeJuries = juriList.filter(j => j.event_id === activeEvent?.id && j.is_juri_penilai)
 
