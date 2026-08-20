@@ -77,6 +77,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!confirm('Apakah Anda yakin ingin menyimpan data pengguna ini?')) return
     setIsSaving(true)
 
     if (editId) {
@@ -119,6 +120,7 @@ export default function UsersTab({ usersList: initialUsers, events, currentUser 
   }
 
   async function handleToggleStatus(user: Profile) {
+    if (!confirm(`Apakah Anda yakin ingin mengubah status pengguna ini menjadi ${user.is_active ? 'Nonaktif' : 'Aktif'}?`)) return
     const { error } = await supabase.from('profiles').update({ is_active: !user.is_active } as any).eq('id', user.id)
     if (error) showToast('error', 'Gagal mengubah status: ' + error.message)
   }

@@ -15,6 +15,7 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [showKategoriFor, setShowKategoriFor] = useState<string | null>(null)
+  const [restartEventId, setRestartEventId] = useState<string | null>(null)
   const [form, setForm] = useState({ nama: '', deskripsi: '', tanggal: '', lokasi: '' })
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -68,10 +69,41 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
     loadEvents()
   }
 
-  const statusConfig = {
+  async function handleJeda(id: string, toJeda: boolean) {
+    if (toJeda && !confirm('Anda yakin ingin MENJEDA event ini? Seluruh operator & juri akan diblokir sementara.')) return
+    
+    await supabase.from('events').update({ status: toJeda ? 'jeda' : 'aktif' } as any).eq('id', id)
+    showToast('success', toJeda ? 'Event dijeda!' : 'Event dilanjutkan!')
+    loadEvents()
+  }
+
+  async function handleRestartEvent(type: 'resume' | 'reset') {
+    if (!restartEventId) return
+    setIsSaving(true)
+
+    if (type === 'reset') {
+      if (!confirm('PERINGATAN KERAS! Anda yakin ingin RESET TOTAL event ini? Seluruh data peserta, sesi, penilaian, dan histori akan DIHAPUS PERMANEN.')) {
+        setIsSaving(false)
+        return
+      }
+      await supabase.from('peserta').delete().eq('event_id', restartEventId)
+      await supabase.from('sesi').delete().eq('event_id', restartEventId)
+      
+    }
+
+    await supabase.from('events').update({ status: 'aktif' } as any).eq('id', restartEventId)
+    
+    showToast('success', type === 'reset' ? 'Event di-reset total dan aktif kembali!' : 'Event dilanjutkan!')
+    setRestartEventId(null)
+    loadEvents()
+    setIsSaving(false)
+  }
+
+  const statusConfig: Record<string, {label: string, badge: string}> = {
     aktif: { label: 'Aktif', badge: 'badge-success' },
     draft: { label: 'Draft', badge: 'badge-warning' },
     selesai: { label: 'Selesai', badge: 'badge-info' },
+    jeda: { label: 'Jeda', badge: 'badge-warning' }
   }
 
   return (
@@ -149,14 +181,29 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
                   {ev.deskripsi && <p className="text-sm text-[var(--color-text-muted)] mt-1">{ev.deskripsi}</p>}
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
-                  {ev.status !== 'aktif' && ev.status !== 'selesai' && (
+                  {ev.status === 'draft' && (
                     <button onClick={() => handleSetAktif(ev.id)} className="btn-primary text-xs py-1 px-3">
                       ▶ Aktifkan
                     </button>
                   )}
+                  {ev.status === 'jeda' && (
+                    <button onClick={() => handleJeda(ev.id, false)} className="btn-primary text-xs py-1 px-3 bg-emerald-600 hover:bg-emerald-700">
+                      ▶ Lanjutkan
+                    </button>
+                  )}
                   {ev.status === 'aktif' && (
-                    <button onClick={() => handleSelesai(ev.id)} className="btn-danger text-xs py-1 px-3">
-                      ⏹ Selesai
+                    <>
+                      <button onClick={() => handleJeda(ev.id, true)} className="btn-secondary text-xs py-1 px-3 border-amber-500 text-amber-600 hover:bg-amber-50">
+                        ⏸ Jeda
+                      </button>
+                      <button onClick={() => handleSelesai(ev.id)} className="btn-secondary text-xs py-1 px-3">
+                        ■ Selesaikan
+                      </button>
+                    </>
+                  )}
+                  {ev.status === 'selesai' && (
+                    <button onClick={() => setRestartEventId(ev.id)} className="btn-secondary text-xs py-1 px-3 border-blue-500 text-blue-600 hover:bg-blue-50">
+                      ▶ Mulai Kembali
                     </button>
                   )}
                   <button
@@ -171,6 +218,42 @@ export default function AdminEventTab({ events: initialEvents, role }: Props) {
           )
         })}
       </div>
+
+      {/* RESTART EVENT MODAL */}
+      {restartEventId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-[var(--color-text)] mb-4 border-b pb-2">Mulai Kembali Event</h3>
+            <p className="text-sm text-[var(--color-text-muted)] mb-6">
+              Bagaimana Anda ingin memulai kembali event ini?
+            </p>
+            <div className="space-y-4">
+              <button 
+                onClick={() => handleRestartEvent('resume')}
+                disabled={isSaving}
+                className="w-full text-left p-4 rounded-xl border border-blue-200 hover:bg-blue-50 transition-colors"
+              >
+                <div className="font-bold text-blue-700">Lanjutkan Data (Resume)</div>
+                <div className="text-xs text-blue-600 mt-1">Mengaktifkan event kembali tanpa menghapus data apapun yang sudah ada.</div>
+              </button>
+              
+              <button 
+                onClick={() => handleRestartEvent('reset')}
+                disabled={isSaving}
+                className="w-full text-left p-4 rounded-xl border border-red-200 hover:bg-red-50 transition-colors"
+              >
+                <div className="font-bold text-red-700">Reset Total (Start Fresh)</div>
+                <div className="text-xs text-red-600 mt-1">Menghapus SELURUH data peserta, sesi, penilaian. Mulai dari nol.</div>
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => setRestartEventId(null)} disabled={isSaving} className="btn-secondary">
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <div className={`toast toast-${toast.type}`}>{toast.type === 'success' ? '✓' : '⚠'} {toast.msg}</div>}
     </div>

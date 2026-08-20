@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X } from 'lucide-react'
+import { logActivity } from '@/lib/utils/logActivity'
 
 interface Props {
   eventId: string
@@ -24,6 +25,7 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!confirm('Apakah Anda yakin ingin menyimpan data peserta ini?')) return
     setIsSaving(true)
 
     const payload = {
@@ -36,12 +38,18 @@ export default function AddPesertaModal({ eventId, kategoriList, onClose, onSucc
       mazmur_bacaan: mazmurBacaan || null,
     }
 
-    const { error } = await supabase.from('peserta').insert(payload as any)
+    const { data, error } = await supabase.from('peserta').insert(payload as any).select('id').single()
     setIsSaving(false)
-
+    
     if (error) {
-      alert('Gagal menambahkan peserta: ' + error.message)
+      alert('Gagal menambah peserta: ' + error.message)
     } else {
+      await logActivity(supabase, {
+        event_id: eventId,
+        action: `Menambahkan peserta baru: ${nama}`,
+        entity_type: 'peserta',
+        entity_id: data.id
+      })
       onSuccess()
     }
   }

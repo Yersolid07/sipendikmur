@@ -54,12 +54,15 @@ export default async function LivePage({
                 <Link
                   key={ev.id}
                   href={`/live?event_id=${ev.id}`}
-                  className="block w-full p-6 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 rounded-2xl transition-all hover:scale-[1.02] active:scale-95 group"
+                  className="block w-full p-6 bg-white/5 backdrop-blur-md hover:bg-white/10 border border-white/10 hover:border-amber-500/50 rounded-2xl transition-all hover:scale-[1.02] active:scale-95 shadow-xl group"
                 >
-                  <h3 className="text-xl font-semibold text-white group-hover:text-amber-400 transition-colors">
+                  <h3 className="text-2xl font-display font-semibold tracking-wide text-white group-hover:text-amber-400 transition-colors" style={{ color: 'white' }}>
                     {ev.nama}
                   </h3>
-                  <p className="text-slate-400 mt-1">Klik untuk membuka Live Screen</p>
+                  <p className="text-slate-300 mt-2 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Klik untuk membuka Live Screen
+                  </p>
                 </Link>
               ))}
             </div>

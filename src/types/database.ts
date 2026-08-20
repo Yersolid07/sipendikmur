@@ -83,7 +83,7 @@ export type Database = {
           deskripsi: string | null
           tanggal: string | null
           lokasi: string | null
-          status: 'aktif' | 'selesai' | 'draft'
+          status: 'aktif' | 'selesai' | 'draft' | 'jeda'
           live_settings: { show_leaderboard: boolean; sort_by: string } | null
           created_at: string
           updated_at: string
@@ -94,7 +94,7 @@ export type Database = {
           deskripsi?: string | null
           tanggal?: string | null
           lokasi?: string | null
-          status?: 'aktif' | 'selesai' | 'draft'
+          status?: 'aktif' | 'selesai' | 'draft' | 'jeda'
           live_settings?: { show_leaderboard: boolean; sort_by: string } | null
           created_at?: string
           updated_at?: string
@@ -105,7 +105,7 @@ export type Database = {
           deskripsi?: string | null
           tanggal?: string | null
           lokasi?: string | null
-          status?: 'aktif' | 'selesai' | 'draft'
+          status?: 'aktif' | 'selesai' | 'draft' | 'jeda'
           live_settings?: { show_leaderboard: boolean; sort_by: string } | null
           updated_at?: string
         }
@@ -445,6 +445,7 @@ export type Database = {
       activity_logs: {
         Row: {
           id: string
+          event_id: string | null
           user_id: string | null
           action: string
           entity_type: string
@@ -454,6 +455,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          event_id?: string | null
           user_id?: string | null
           action: string
           entity_type: string
@@ -463,6 +465,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          event_id?: string | null
           user_id?: string | null
           action?: string
           entity_type?: string

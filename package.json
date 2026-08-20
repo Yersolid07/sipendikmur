@@ -11,6 +11,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
+    "dayjs": "^1.11.23",
     "docx": "^9.7.1",
     "file-saver": "^2.0.5",
     "jspdf": "^4.2.1",

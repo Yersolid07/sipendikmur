@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import JuriDashboard from '@/components/juri/JuriDashboard'
 import Navbar from '@/components/shared/Navbar'
+import AcaraSelesaiView from '@/components/shared/AcaraSelesaiView'
 import { Profile, Event, Sesi, Peserta, Kategori } from '@/types/database'
 
 type ActiveSesi = Sesi & {
@@ -35,10 +36,21 @@ export default async function DashboardPage() {
   if (profile.event_id) {
     activeEventQuery = activeEventQuery.eq('id', profile.event_id)
   } else {
-    activeEventQuery = activeEventQuery.eq('status', 'aktif').order('created_at', { ascending: false }).limit(1)
+    activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)
   }
 
   const { data: activeEventData } = await activeEventQuery.single()
+
+  if (activeEventData?.status === 'selesai') {
+    return (
+      <div className="min-h-screen">
+        <Navbar profile={profile} />
+        <main className="max-w-4xl mx-auto px-4 py-6">
+          <AcaraSelesaiView />
+        </main>
+      </div>
+    )
+  }
 
   const activeEvent = activeEventData as Event | null
 

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Profile, Event, Sesi, RekapPenilaian } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { PlayCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react'
+import { logActivity } from '@/lib/utils/logActivity'
 
 type ActiveSesi = Sesi & {
   peserta: { id: string; nama: string; mazmur_bacaan: string | null } | null
@@ -80,10 +82,11 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
   async function handleMulaiTampil() {
     if (!selectedPesertaId || !activeEvent) return
-    setIsSaving(true)
-
     const selectedPeserta = pesertaList.find(p => p.peserta_id === selectedPesertaId)
     if (!selectedPeserta) return
+    if (!confirm(`Apakah Anda yakin ingin memulai penampilan peserta: ${selectedPeserta.nama_peserta}?`)) return
+    
+    setIsSaving(true)
 
     // 1. Update existing aktif peserta to selesai
     if (sesi?.peserta_aktif_id) {
@@ -122,7 +125,15 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
       .limit(1)
       .single()
       
-    if (s) setSesi(s as unknown as ActiveSesi)
+    if (s) {
+      setSesi(s as unknown as ActiveSesi)
+      await logActivity(supabase, {
+        event_id: activeEvent.id,
+        action: `Memulai penampilan peserta: ${selectedPeserta.nama_peserta}`,
+        entity_type: 'sesi',
+        entity_id: s.id
+      })
+    }
 
     setIsSaving(false)
     setSelectedPesertaId('')
@@ -175,6 +186,36 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
     setIsSaving(false)
   }
 
+  async function handleSelesaiTampil() {
+    if (!sesi || !activeEvent) return
+    if (!confirm('Apakah Anda yakin ingin mengakhiri penampilan peserta ini? Statusnya akan berubah menjadi Selesai.')) return
+    setIsSaving(true)
+    
+    // Mark peserta and sesi as selesai
+    if (sesi.peserta_aktif_id) {
+      await supabase.from('peserta').update({ status: 'selesai' } as any).eq('id', sesi.peserta_aktif_id)
+    }
+    await supabase.from('sesi').update({ status: 'selesai' } as any).eq('id', sesi.id)
+    
+    await logActivity(supabase, {
+      event_id: activeEvent.id,
+      action: `Menyelesaikan penampilan peserta: ${sesi.peserta?.nama}`,
+      entity_type: 'sesi',
+      entity_id: sesi.id
+    })
+
+    setSesi(null)
+    setIsSaving(false)
+  }
+
+  if (!activeEvent) {
+    return (
+      <div className="panel p-10 text-center">
+        <h2 className="text-xl font-bold text-[var(--color-text)]">Tidak Ada Event Aktif</h2>
+      </div>
+    )
+  }
+
   const checkedInList = pesertaList.filter(p => p.is_checked_in)
   
   const isSesiActive = sesi?.status === 'berjalan'
@@ -183,8 +224,22 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
   const selectedKategori = kategoriList.find(k => k.id === selectedPeserta?.kategori_id)
   const allowedMazmur = selectedKategori?.bahan_mazmur || []
 
+  const isJeda = activeEvent.status === 'jeda'
+
   return (
     <div className="space-y-6">
+      {isJeda && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded shadow-sm flex items-center justify-between animate-pulse">
+          <div className="flex items-center">
+            <span className="text-xl mr-3">⏸</span>
+            <div>
+              <p className="font-bold">Sistem Dijeda Sementara</p>
+              <p className="text-sm">Panitia sedang menjeda event. Aksi dibekukan, Anda hanya dapat melihat data historis.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="panel p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-l-green-600">
         <div>
           <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Control Panel Sesi Panggung</h1>
@@ -214,7 +269,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                   className="form-input bg-[var(--color-cream-1)] border-[var(--color-border-dark)] text-[var(--color-text)] disabled:opacity-50"
                   value={selectedPesertaId}
                   onChange={e => setSelectedPesertaId(e.target.value)}
-                  disabled={isSesiActive}
+                  disabled={isSesiActive || isJeda}
                 >
                   <option value="">-- Pilih Peserta --</option>
                   {checkedInList.map(p => (
@@ -234,7 +289,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                       value={mazmurInput} 
                       onChange={e => setMazmurInput(e.target.value)} 
                       className="form-input bg-[var(--color-cream-1)] disabled:opacity-50"
-                      disabled={isSesiActive}
+                      disabled={isSesiActive || isJeda}
                     >
                       <option value="">-- Tetap Gunakan Mazmur Lama / Pilih --</option>
                       {allowedMazmur.map(m => (
@@ -248,7 +303,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                       onChange={e => setMazmurInput(e.target.value)} 
                       placeholder="Contoh: Mazmur 23:1-6"
                       className="form-input disabled:opacity-50" 
-                      disabled={isSesiActive}
+                      disabled={isSesiActive || isJeda}
                     />
                   )}
                 </div>
@@ -256,7 +311,7 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
               <button 
                 onClick={handleMulaiTampil} 
-                disabled={!selectedPesertaId || isSaving || isSesiActive}
+                disabled={!selectedPesertaId || isSaving || isSesiActive || isJeda}
                 className="w-full btn-primary py-3 text-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? 'Memproses...' : '▶ MULAI TAMPIL'}
@@ -266,15 +321,19 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
 
           <div className="panel p-6">
             <h3 className="font-semibold text-[var(--color-text)] mb-4">Broadcast Pengumuman</h3>
-            <textarea 
-              value={pengumuman} 
+            <textarea                
+              value={pengumuman}
               onChange={e => setPengumuman(e.target.value)}
-              placeholder="Tulis pengumuman untuk Juri & IP..." 
-              className="form-input resize-none mb-3" 
-              rows={3} 
+              placeholder="Tulis pengumuman di sini..."
+              className="form-input text-sm resize-none disabled:opacity-50"
+              rows={3}
+              disabled={isJeda}
             />
-            <button onClick={handleUpdatePengumuman} disabled={!sesi} className="btn-secondary w-full">
-              Kirim Pengumuman
+            <button 
+              onClick={handleUpdatePengumuman}
+              disabled={isSaving || isJeda}
+              className="w-full btn-secondary mt-3 text-sm py-2"
+            >Kirim Pengumuman
             </button>
           </div>
         </div>
@@ -308,8 +367,8 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                     </div>
                     <button 
                       onClick={handleBatalkanTampil}
-                      disabled={isSaving}
-                      className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors"
+                      disabled={isSaving || isJeda}
+                      className="w-full py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-50 transition-colors disabled:opacity-50"
                     >
                       Batal Panggil (Undo)
                     </button>
@@ -337,6 +396,15 @@ export default function OpSesiDashboard({ profile, activeEvent, initialSesi }: P
                             className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-md"
                           >
                             Tampilkan Nilai (Reveal Score)
+                          </button>
+                        )}
+                        {sesi.status !== 'selesai' && (
+                          <button 
+                            onClick={handleSelesaiTampil} 
+                            disabled={isSaving || isJeda}
+                            className="w-full btn-primary bg-emerald-600 hover:bg-emerald-700 py-3 text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Finalisasi & Selesaikan Sesi Ini
                           </button>
                         )}
                       </div>

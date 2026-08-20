@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Navbar from '@/components/shared/Navbar'
+import AcaraSelesaiView from '@/components/shared/AcaraSelesaiView'
 import OpRegisDashboard from '@/components/opregis/OpRegisDashboard'
 import { Profile, Event, Setting } from '@/types/database'
 
@@ -26,10 +27,21 @@ export default async function OpRegisPage() {
   if (profile.event_id) {
     activeEventQuery = activeEventQuery.eq('id', profile.event_id)
   } else {
-    activeEventQuery = activeEventQuery.eq('status', 'aktif').order('created_at', { ascending: false }).limit(1)
+    activeEventQuery = activeEventQuery.in('status', ['aktif', 'jeda']).order('created_at', { ascending: false }).limit(1)
   }
 
   const { data: activeEventData } = await activeEventQuery.single()
+
+  if (activeEventData?.status === 'selesai' && !['superadmin', 'subadmin'].includes(profile.role)) {
+    return (
+      <div className="min-h-screen">
+        <Navbar profile={profile} />
+        <main className="max-w-4xl mx-auto px-4 py-6">
+          <AcaraSelesaiView />
+        </main>
+      </div>
+    )
+  }
 
   // Get Settings
   const { data: settingsData } = await supabase

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { RekapPenilaian } from '@/types/database'
 import { Trophy } from 'lucide-react'
@@ -63,18 +63,16 @@ export default function LeaderboardView({ eventId, sortBy }: Props) {
   }
 
   // Pengelompokan berdasarkan pengaturan sortBy
-  let groupedData: { title: string, items: RekapPenilaian[] }[] = []
-
-  if (sortBy === 'kategori') {
-    kategoriList.forEach(k => {
-      const items = leaderboard.filter(p => p.kategori_id === k.id)
-      if (items.length > 0) {
-        groupedData.push({ title: k.nama, items })
-      }
-    })
-  } else {
-    groupedData = [{ title: 'Leaderboard Global', items: leaderboard }]
-  }
+  const groupedData = useMemo(() => {
+    if (sortBy === 'kategori') {
+      return kategoriList.map(kat => ({
+        title: kat.nama,
+        items: leaderboard.filter(p => p.kategori_id === kat.id)
+      })).filter(g => g.items.length > 0)
+    } else {
+      return [{ title: 'Leaderboard Global', items: leaderboard }]
+    }
+  }, [sortBy, kategoriList, leaderboard])
 
   return (
     <div className="w-full max-w-6xl mx-auto space-y-12 animate-fade-in">

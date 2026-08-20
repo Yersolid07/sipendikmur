@@ -42,6 +42,7 @@ export default function SettingsTab() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!confirm('Apakah Anda yakin ingin menyimpan pengaturan global ini?')) return
     setIsSaving(true)
     
     const payload = {

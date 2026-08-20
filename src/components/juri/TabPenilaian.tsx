@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Profile, Event, Sesi, Peserta, Kategori, Penilaian } from '@/types/database'
 import { CheckCircle2, Video, Lock } from 'lucide-react'
 import { calculateTotalScore } from '@/lib/utils/score'
+import { logActivity } from '@/lib/utils/logActivity'
 
 type ActiveSesi = Sesi & {
   peserta: Peserta | null
@@ -15,6 +16,7 @@ interface Props {
   profile: Profile
   sesi: ActiveSesi | null
   activeEvent: Event
+  isJeda?: boolean
 }
 
 const getGradeDesc = (val: number, kriteriaKey: string | null) => {
@@ -103,7 +105,7 @@ const CATATAN_ASPEK = [
   { id: 'penguasaan_panggung', label: '10. Penguasaan Panggung' },
 ]
 
-export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
+export default function TabPenilaian({ profile, sesi, activeEvent, isJeda }: Props) {
   const [scores, setScores] = useState<any>({
     kekompakan: 0,
     interpretasi: 0,
@@ -331,6 +333,8 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       }
     }
 
+    if (!confirm('Apakah Anda yakin ingin MENGIRIM nilai secara permanen? Nilai yang sudah dikirim tidak dapat diubah kecuali melalui pengajuan VAR.')) return
+  
     setIsSubmitting(true)
     
     let potongan = 0
@@ -378,6 +382,13 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
       })
     }
 
+    await logActivity(supabase, {
+      event_id: activeEvent.id,
+      action: `Juri ${profile.nama} telah memfinalisasi penilaian.`,
+      entity_type: 'penilaian',
+      entity_id: existingPenilaian?.id
+    })
+
     setIsSubmitting(false)
     setIsSubmitted(true)
     showToast('success', 'Nilai berhasil disubmit!')
@@ -386,6 +397,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
   async function handleAjukanVAR(e: React.FormEvent) {
     e.preventDefault()
     if (!existingPenilaian || !sesi?.peserta_aktif_id) return
+    if (!confirm('Yakin ingin mengajukan VAR untuk mengubah nilai? Permintaan ini akan ditinjau oleh Inspektur Pertandingan.')) return
     setIsSubmitting(true)
     
     // 1. Catat Request VAR (Pending, butuh persetujuan IP)
@@ -410,7 +422,12 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     const { data: varData } = await supabase.from('var_requests').select('id, status').eq('penilaian_id', existingPenilaian.id).eq('status', 'pending').maybeSingle()
     if (varData) setPendingVarRequest(varData)
 
-    // Juri tidak membuka kuncinya sendiri. IP yang akan menyetujui.
+    await logActivity(supabase, {
+      event_id: activeEvent.id,
+      action: `Juri ${profile.nama} mengajukan VAR.`,
+      entity_type: 'var_requests',
+      entity_id: varData?.id
+    })
     
     setIsSubmitting(false)
     setShowVarModal(false)
@@ -433,7 +450,7 @@ export default function TabPenilaian({ profile, sesi, activeEvent }: Props) {
     )
   }
 
-  const isLocked = isSubmitted || sesi.nilai_dikunci
+  const isLocked = isSubmitted || sesi.nilai_dikunci || isJeda
 
   return (
     <>

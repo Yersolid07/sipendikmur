@@ -8,7 +8,8 @@ import UsersTab from './UsersTab'
 import SettingsTab from './SettingsTab'
 import KontrolLombaTab from './KontrolLombaTab'
 import RekapLiveBoardTab from './RekapLiveBoardTab'
-import { Trophy, ClipboardList, Users, Settings, MonitorPlay, BarChart2 } from 'lucide-react'
+import AdminLogTab from '../admin/AdminLogTab'
+import { Trophy, ClipboardList, Users, Settings, MonitorPlay, BarChart2, Activity } from 'lucide-react'
 
 interface Props {
   profile: Profile
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export default function SuperadminDashboard({ profile, events, usersList }: Props) {
-  const [activeTab, setActiveTab] = useState<'kontrol' | 'rekap-live' | 'events' | 'kategori' | 'users' | 'settings'>('kontrol')
+  const [activeTab, setActiveTab] = useState<'kontrol' | 'rekap-live' | 'events' | 'kategori' | 'users' | 'settings' | 'logs'>('kontrol')
   
   // By default, select the subadmin's assigned event OR the first active event (or just the first event if none active)
   const defaultEventId = profile.role === 'subadmin' 
@@ -81,6 +82,7 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
           { id: 'events', label: 'Event & Lomba', icon: <Trophy className="w-5 h-5" /> },
           { id: 'kategori', label: 'Kategori (Scoring)', icon: <ClipboardList className="w-5 h-5" /> },
           { id: 'users', label: 'Manajemen Akun', icon: <Users className="w-5 h-5" /> },
+          { id: 'logs', label: 'Activity Logs', icon: <Activity className="w-5 h-5" /> },
           profile.role === 'superadmin' && { id: 'settings', label: 'Pengaturan Global', icon: <Settings className="w-5 h-5" /> },
         ].filter(Boolean) as { id: string; label: string; icon: React.ReactNode }[]).map((tab) => (
           <button
@@ -129,6 +131,12 @@ export default function SuperadminDashboard({ profile, events, usersList }: Prop
         
         {activeTab === 'rekap-live' && activeEvent && (
           <RekapLiveBoardTab activeEvent={activeEvent} />
+        )}
+
+        {activeTab === 'logs' && (
+          <div className="panel">
+            <AdminLogTab eventId={profile.role === 'subadmin' ? activeEvent?.id : selectedEventId} />
+          </div>
         )}
       </div>
     </div>

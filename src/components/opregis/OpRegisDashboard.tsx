@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Profile, Event, Setting, RekapPenilaian } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Printer, Plus, Upload, Pencil } from 'lucide-react'
+import { FileText, Printer, Plus, Upload, Pencil, Trash2 } from 'lucide-react'
+import { logActivity } from '@/lib/utils/logActivity'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import AddPesertaModal from './AddPesertaModal'
@@ -258,6 +259,26 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
     return true
   })
 
+  function handlePrint() {
+    window.print()
+  }
+
+  async function handleDelete(id: string) {
+    if (!activeEvent) return
+    const { error } = await supabase.from('peserta').delete().eq('id', id)
+    if (error) {
+      alert('Gagal menghapus: ' + error.message)
+    } else {
+      await logActivity(supabase, {
+        event_id: activeEvent.id,
+        action: 'Menghapus peserta',
+        entity_type: 'peserta',
+        entity_id: id
+      })
+      loadData()
+    }
+  }
+
   // Unique categories for filter
   const categories = Array.from(new Set(pesertaList.map(p => p.kategori_id))).map(id => {
     return { id, nama: pesertaList.find(p => p.kategori_id === id)?.kategori }
@@ -272,8 +293,22 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
     )
   }
 
+  const isJeda = activeEvent.status === 'jeda'
+
   return (
     <div className="space-y-6">
+      {isJeda && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded shadow-sm flex items-center justify-between animate-pulse">
+          <div className="flex items-center">
+            <span className="text-xl mr-3">⏸</span>
+            <div>
+              <p className="font-bold">Sistem Dijeda Sementara</p>
+              <p className="text-sm">Panitia sedang menjeda event. Aksi dibekukan, Anda hanya dapat melihat data historis.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="panel p-6 flex flex-col md:flex-row justify-between md:items-center gap-4 border-l-4 border-l-blue-600">
         <div>
           <h1 className="text-2xl font-display font-bold text-[var(--color-text)]">Panel Registrasi & Cetak Hasil</h1>
@@ -284,12 +319,17 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
             <div className="text-sm text-[var(--color-text-muted)]">Total Check-In</div>
             <div className="text-xl font-bold text-blue-600">{pesertaList.filter(p => p.is_checked_in).length} / {pesertaList.length}</div>
           </div>
-          <button onClick={() => setShowImportModal(true)} className="px-4 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
-            <Upload className="w-4 h-4" /> Import Excel
-          </button>
-          <button onClick={() => setShowAddModal(true)} className="btn-primary py-2 px-4 text-sm flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Tambah Peserta
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setShowAddModal(true)} className="btn-primary" disabled={isJeda}>
+              <Plus className="w-4 h-4 mr-1" /> Tambah Peserta
+            </button>
+            <button onClick={() => setShowImportModal(true)} className="btn-secondary" disabled={isJeda}>
+              <Upload className="w-4 h-4 mr-1" /> Import Excel
+            </button>
+            <button onClick={handlePrint} className="btn-secondary" disabled={isJeda}>
+              <Printer className="w-4 h-4 mr-1" /> Cetak Hasil
+            </button>
+          </div>
         </div>
       </div>
 
@@ -393,6 +433,18 @@ export default function OpRegisDashboard({ profile, activeEvent, settings }: Pro
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                         )}
+                        <button
+                          onClick={() => {
+                            if (!isJeda && confirm('Yakin ingin menghapus peserta ini? Semua nilai juga akan terhapus.')) {
+                              handleDelete(p.peserta_id)
+                            }
+                          }}
+                          className="p-1.5 text-[var(--color-text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="Hapus Peserta"
+                          disabled={isJeda}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                         {p.jumlah_juri_menilai === 3 && (
                           <>
                           <button 

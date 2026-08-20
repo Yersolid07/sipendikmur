@@ -136,9 +136,8 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="panel p-10">
-          <div className="mb-4"><BookOpen className="w-16 h-16 mx-auto text-[var(--color-amber-dark)] opacity-50" /></div>
-          <h2 className="font-display text-2xl font-semibold text-[var(--color-text)] mb-2">
-            Belum Ada Event Aktif
+          <h2 className="text-xl font-bold text-[var(--color-text)] mb-2">
+            Belum Ada Event
           </h2>
           <p className="text-[var(--color-text-muted)] text-sm max-w-sm">
             Inspektur Pertandingan belum mengaktifkan event. Silakan tunggu instruksi lebih lanjut.
@@ -148,8 +147,22 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
     )
   }
 
+  const isJeda = activeEvent.status === 'jeda'
+
   return (
     <div className="space-y-6">
+      {isJeda && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded shadow-sm flex items-center justify-between animate-pulse">
+          <div className="flex items-center">
+            <span className="text-xl mr-3">⏸</span>
+            <div>
+              <p className="font-bold">Sistem Dijeda Sementara</p>
+              <p className="text-sm">Panitia sedang menjeda event. Aksi dibekukan, Anda hanya dapat melihat data historis.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -238,6 +251,7 @@ export default function JuriDashboard({ profile, activeEvent, activeSesi: initia
             profile={profile}
             sesi={sesi}
             activeEvent={activeEvent}
+            isJeda={isJeda}
           />
         )}
         {activeTab === 'hasil' && (
