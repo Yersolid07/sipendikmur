@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Profile } from '@/types/database'
 
@@ -17,6 +17,7 @@ export default function Navbar({ profile }: Props) {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
   
   async function handleLogout() {
@@ -83,6 +84,21 @@ export default function Navbar({ profile }: Props) {
             <span className="hidden sm:inline text-xs ml-2" style={{ color: 'var(--color-text-muted)' }}>GMIM</span>
           </div>
         </div>
+
+        {/* Center / Return Button */}
+        {['subadmin', 'superadmin'].includes(profile.role) && pathname !== '/superadmin' && (
+          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2">
+            <button
+              onClick={() => router.push('/superadmin')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-full transition-colors border border-slate-200 shadow-sm"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+              Kembali ke {profile.role === 'subadmin' ? 'Panel Sub-Admin' : 'Superadmin'}
+            </button>
+          </div>
+        )}
 
         {/* Right side */}
         <div className="flex items-center gap-3">

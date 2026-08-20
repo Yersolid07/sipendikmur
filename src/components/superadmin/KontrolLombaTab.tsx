@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Event, Peserta, Kategori, Sesi } from '@/types/database'
-import { ExternalLink, RefreshCw, AlertTriangle, MonitorPlay, Users, ShieldAlert } from 'lucide-react'
+import { Event, Peserta, Kategori, Sesi, Profile } from '@/types/database'
+import { ExternalLink, RefreshCw, AlertTriangle, MonitorPlay, Users, ShieldAlert, Eye } from 'lucide-react'
 import Link from 'next/link'
+import DetailPesertaModal from '../admin/DetailPesertaModal'
 
 interface Props {
   activeEvent: Event
@@ -15,6 +16,8 @@ type PesertaWithKategori = Peserta & { kategori: Kategori | Kategori[] | null }
 export default function KontrolLombaTab({ activeEvent }: Props) {
   const [pesertaList, setPesertaList] = useState<PesertaWithKategori[]>([])
   const [sesiList, setSesiList] = useState<Sesi[]>([])
+  const [juriList, setJuriList] = useState<Profile[]>([])
+  const [selectedDetailPeserta, setSelectedDetailPeserta] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
 
@@ -40,6 +43,17 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
 
     if (!sErr && sData) {
       setSesiList(sData as any)
+    }
+
+    // Load Juri for this event
+    const { data: jData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'juri')
+      .eq('event_id', activeEvent.id)
+      
+    if (jData) {
+      setJuriList(jData as any)
     }
 
     setIsLoading(false)
@@ -155,7 +169,7 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
                 <th className="px-4 py-3">Nama</th>
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Aksi Darurat</th>
+                <th className="px-4 py-3 text-right">Aksi & Kontrol</th>
               </tr>
             </thead>
             <tbody>
@@ -183,15 +197,25 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {p.status === 'selesai' && (
+                      <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => handleBatalFinalkan(p.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors shadow-sm"
+                          onClick={() => setSelectedDetailPeserta(p.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm"
                         >
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          Batal Finalkan
+                          <Eye className="w-3.5 h-3.5" />
+                          Detail & Progres
                         </button>
-                      )}
+
+                        {p.status === 'selesai' && (
+                          <button
+                            onClick={() => handleBatalFinalkan(p.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 transition-colors shadow-sm"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            Batal Finalkan
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -200,6 +224,30 @@ export default function KontrolLombaTab({ activeEvent }: Props) {
           </table>
         </div>
       </div>
+
+      {selectedDetailPeserta && (
+        <DetailPesertaModal
+          pesertaId={selectedDetailPeserta}
+          sesiId={sesiList.find(s => s.peserta_aktif_id === selectedDetailPeserta)?.id}
+          pesertaNama={pesertaList.find(p => p.id === selectedDetailPeserta)?.nama || ''}
+          pesertaUndian={pesertaList.find(p => p.id === selectedDetailPeserta)?.nomor_undian || null}
+          pesertaMazmur={pesertaList.find(p => p.id === selectedDetailPeserta)?.mazmur_bacaan || null}
+          juriList={juriList}
+          onClose={() => setSelectedDetailPeserta(null)}
+          onAkhiriPenampilan={async () => {
+            const row = pesertaList.find(d => d.id === selectedDetailPeserta);
+            if (row) {
+               if (!window.confirm('Akhiri & Finalkan penampilan peserta ini secara paksa?')) return
+               const sId = sesiList.find(s => s.peserta_aktif_id === row.id)?.id
+               if (sId) {
+                 await supabase.from('sesi').update({ nilai_dikunci: true, status: 'selesai' } as any).eq('id', sId)
+               }
+               await supabase.from('peserta').update({ status: 'selesai' } as any).eq('id', row.id)
+               loadData()
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
